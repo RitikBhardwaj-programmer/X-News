@@ -53,6 +53,10 @@ public class ArticleService {
                 .map(ArticleResponse::from)
                 .toList();
     }
+    @Transactional
+    public void deleteAllArticles() {
+        articleRepository.deleteAllInBatch();
+    }
 
     @Transactional(readOnly = true)
     public ArticleResponse getArticle(Long id) {

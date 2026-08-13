@@ -2,6 +2,8 @@ package com.cfs.xnews.news.collection;
 
 
 
+import com.cfs.xnews.kafka.ArticleEvent;
+import com.cfs.xnews.kafka.KafkaProducer;
 import com.cfs.xnews.news.articles.Article;
 import com.cfs.xnews.news.articles.ArticleRepository;
 import com.cfs.xnews.news.collection.dto.CollectedArticle;
@@ -16,15 +18,17 @@ import java.util.List;
 @Service
 public class NewsCollectionService {
 
+    private final KafkaProducer kafkaProducer;
     private final NewsSourceRepository sourceRepository;
     private final ArticleRepository articleRepository;
     private final NewsSourceClient newsSourceClient;
 
     public NewsCollectionService(
-            NewsSourceRepository sourceRepository,
+            KafkaProducer kafkaProducer, NewsSourceRepository sourceRepository,
             ArticleRepository articleRepository,
             NewsSourceClient newsSourceClient
     ) {
+        this.kafkaProducer = kafkaProducer;
         this.sourceRepository = sourceRepository;
         this.articleRepository = articleRepository;
         this.newsSourceClient = newsSourceClient;
@@ -73,7 +77,19 @@ public class NewsCollectionService {
                     collected.publishedAt()
             );
 
-            articleRepository.save(article);
+            Article saved =
+                    articleRepository.save(article);
+
+            ArticleEvent event = new ArticleEvent(
+                    saved.getId(),
+                    saved.getTitle(),
+                    saved.getDescription(),
+                    saved.getUrl(),
+                    saved.getSource(),
+                    saved.getPublishedAt()
+            );
+
+            kafkaProducer.publishArticle(event);
 
             savedCount++;
         }

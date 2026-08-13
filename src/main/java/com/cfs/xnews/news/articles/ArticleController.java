@@ -55,4 +55,12 @@ public class ArticleController {
                 articleService.getArticle(id)
         );
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllArticles() {
+
+        articleService.deleteAllArticles();
+
+        return ResponseEntity.noContent().build();
+    }
 }
