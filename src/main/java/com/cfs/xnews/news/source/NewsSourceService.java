@@ -5,6 +5,8 @@ package com.cfs.xnews.news.source;
 
 
 
+import com.cfs.xnews.news.collection.NewsSourceClient;
+import com.cfs.xnews.news.collection.dto.CollectedArticle;
 import com.cfs.xnews.news.source.dto.CreateNewsSourceRequest;
 import com.cfs.xnews.news.source.dto.NewsSourceResponse;
 
@@ -17,11 +19,14 @@ import java.util.List;
 public class NewsSourceService {
 
     private final NewsSourceRepository repository;
+    private final NewsSourceClient newsSourceClient;
 
     public NewsSourceService(
-            NewsSourceRepository repository
+            NewsSourceRepository repository,
+            NewsSourceClient newsSourceClient
     ) {
         this.repository = repository;
+        this.newsSourceClient = newsSourceClient;
     }
 
     @Transactional
@@ -90,5 +95,27 @@ public class NewsSourceService {
                 );
 
         source.setEnabled(false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CollectedArticle> fetchArticles(
+            Long sourceId
+    ) {
+
+        NewsSource source = repository
+                .findById(sourceId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "News source not found"
+                        )
+                );
+
+        if (!source.isEnabled()) {
+            throw new RuntimeException(
+                    "News source is disabled"
+            );
+        }
+
+        return newsSourceClient.fetchArticles(source);
     }
 }

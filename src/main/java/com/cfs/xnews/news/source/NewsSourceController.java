@@ -2,6 +2,8 @@ package com.cfs.xnews.news.source;
 
 
 
+import com.cfs.xnews.news.collection.NewsCollectionService;
+import com.cfs.xnews.news.collection.dto.CollectedArticle;
 import com.cfs.xnews.news.source.dto.CreateNewsSourceRequest;
 import com.cfs.xnews.news.source.dto.NewsSourceResponse;
 
@@ -19,11 +21,14 @@ import java.util.List;
 public class NewsSourceController {
 
     private final NewsSourceService service;
+    private final NewsCollectionService collectionService;
 
     public NewsSourceController(
-            NewsSourceService service
+            NewsSourceService service,
+            NewsCollectionService collectionService
     ) {
         this.service = service;
+        this.collectionService = collectionService;
     }
 
     @PostMapping
@@ -71,5 +76,27 @@ public class NewsSourceController {
         service.disableSource(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/fetch")
+    public ResponseEntity<List<CollectedArticle>> fetchSource(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                service.fetchArticles(id)
+        );
+    }
+
+    @PostMapping("/{id}/collect")
+    public ResponseEntity<String> collect(
+            @PathVariable Long id
+    ) {
+
+        int count =
+                collectionService.collectFromSource(id);
+
+        return ResponseEntity.ok(
+                "Collected " + count + " new articles"
+        );
     }
 }

@@ -18,7 +18,7 @@ public record CreateArticleRequest(
         @NotBlank
         String source,
 
-        @NotNull
+
         LocalDateTime publishedAt
 ) {
 }

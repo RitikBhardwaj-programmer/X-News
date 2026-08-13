@@ -33,7 +33,7 @@ public class Article {
     @Column(nullable = false, length = 255)
     private String source;
 
-    @Column(name = "published_at", nullable = false)
+    @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
     @Column(name = "created_at", nullable = false)
