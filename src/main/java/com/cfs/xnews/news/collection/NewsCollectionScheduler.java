@@ -22,7 +22,7 @@ public class NewsCollectionScheduler {
         this.collectionService = collectionService;
     }
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 600000)
     public void collectNews() {
 
         for (NewsSource source :
