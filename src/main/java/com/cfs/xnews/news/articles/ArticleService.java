@@ -2,6 +2,8 @@ package com.cfs.xnews.news.articles;
 
 
 
+import com.cfs.xnews.kafka.ArticleEvent;
+import com.cfs.xnews.kafka.KafkaProducer;
 import com.cfs.xnews.news.articles.dto.ArticleResponse;
 import com.cfs.xnews.news.articles.dto.CreateArticleRequest;
 
@@ -13,11 +15,13 @@ import java.util.List;
 @Service
 public class ArticleService {
 
+    private final KafkaProducer kafkaProducer;
     private final ArticleRepository articleRepository;
 
     public ArticleService(
-            ArticleRepository articleRepository
+            KafkaProducer kafkaProducer, ArticleRepository articleRepository
     ) {
+        this.kafkaProducer = kafkaProducer;
         this.articleRepository = articleRepository;
     }
 
@@ -40,7 +44,21 @@ public class ArticleService {
                 request.publishedAt()
         );
 
+        // Save first → generates article ID
         Article saved = articleRepository.save(article);
+
+        // Create Kafka event using generated ID
+        ArticleEvent event = new ArticleEvent(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getDescription(),
+                saved.getUrl(),
+                saved.getSource(),
+                saved.getPublishedAt()
+        );
+
+        // Publish after saving
+        kafkaProducer.publishArticle(event);
 
         return ArticleResponse.from(saved);
     }
@@ -68,6 +86,8 @@ public class ArticleService {
                                 "Article not found"
                         )
                 );
+        
+        
 
         return ArticleResponse.from(article);
     }

@@ -21,7 +21,7 @@ import java.util.List;
 public class NewsSourceController {
 
     private final NewsSourceService service;
-    private final NewsCollectionService collectionService;
+    private final  NewsCollectionService collectionService;
 
     public NewsSourceController(
             NewsSourceService service,

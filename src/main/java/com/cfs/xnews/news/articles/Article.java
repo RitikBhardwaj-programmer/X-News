@@ -1,6 +1,9 @@
 package com.cfs.xnews.news.articles;
 
 
+import com.cfs.xnews.event.NewsEvent;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -17,6 +20,10 @@ import java.time.LocalDateTime;
 )
 public class Article {
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "news_event_id")
+    @JsonBackReference
+    private NewsEvent newsEvent;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,6 +45,19 @@ public class Article {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    @Column(length = 50)
+    private String category;
+
+    @Column(columnDefinition = "TEXT")
+    private String keywords;
+
+    @Column(length = 30)
+    private String sentiment;
 
     protected Article() {
     }
@@ -83,5 +103,47 @@ public class Article {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getKeywords() {
+        return keywords;
+    }
+
+    public void setKeywords(String keywords) {
+        this.keywords = keywords;
+    }
+
+    public String getSentiment() {
+        return sentiment;
+    }
+
+    public void setSentiment(String sentiment) {
+        this.sentiment = sentiment;
+    }
+
+    public void setDescription(String cleanedDescription) {
+        this.description = cleanedDescription;
+    }
+    public NewsEvent getNewsEvent() {
+        return newsEvent;
+    }
+
+    public void setNewsEvent(NewsEvent newsEvent) {
+        this.newsEvent = newsEvent;
     }
 }
