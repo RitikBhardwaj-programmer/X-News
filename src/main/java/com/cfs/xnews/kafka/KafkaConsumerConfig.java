@@ -3,6 +3,7 @@ package com.cfs.xnews.kafka;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +19,12 @@ import java.util.Map;
 @Configuration
 public class KafkaConsumerConfig {
 
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
+
     @Bean
     public ConsumerFactory<String, ArticleEvent> consumerFactory() {
 
@@ -30,12 +37,12 @@ public class KafkaConsumerConfig {
 
         properties.put(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                "localhost:9092"
+                bootstrapServers
         );
 
         properties.put(
                 ConsumerConfig.GROUP_ID_CONFIG,
-                "xnews-processing"
+                groupId
         );
 
         properties.put(
@@ -51,6 +58,23 @@ public class KafkaConsumerConfig {
         properties.put(
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
                 "earliest"
+        );
+
+        properties.put(
+                "security.protocol",
+                "SASL_SSL"
+        );
+
+        properties.put(
+                "sasl.mechanism",
+                "PLAIN"
+        );
+
+        properties.put(
+                "sasl.jaas.config",
+                "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+                        "username='" + System.getenv("KAFKA_API_KEY") + "' " +
+                        "password='" + System.getenv("KAFKA_API_SECRET") + "';"
         );
 
         return new DefaultKafkaConsumerFactory<>(
