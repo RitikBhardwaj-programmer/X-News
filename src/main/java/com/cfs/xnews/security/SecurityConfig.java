@@ -95,7 +95,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
-                        "http://localhost:4173"
+                        "http://localhost:4173",
+                        "https://lemon-pond-082981600.7.azurestaticapps.net"
                 )
         );
 
