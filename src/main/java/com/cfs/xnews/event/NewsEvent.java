@@ -44,7 +44,9 @@ public class NewsEvent {
         this.createdAt = LocalDateTime.now();
     }
     public void addArticle(Article article) {
+
         articles.add(article);
+
         article.setNewsEvent(this);
     }
 

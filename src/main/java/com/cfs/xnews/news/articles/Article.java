@@ -3,8 +3,12 @@ package com.cfs.xnews.news.articles;
 
 import com.cfs.xnews.event.NewsEvent;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -59,9 +63,55 @@ public class Article {
     @Column(length = 30)
     private String sentiment;
 
-    protected Article() {
+    @Column(columnDefinition = "TEXT")
+    private String entities;
+
+    @Column(length = 255)
+    private String location;
+
+    @JsonIgnore
+    @Column(name = "embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 384)
+    private float[] embedding;
+
+    public String getEntities() {
+        return entities;
     }
 
+    public void setEntities(String entities) {
+        this.entities = entities;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public float[] getEmbedding() {
+        return embedding;
+    }
+
+    public void setEmbedding(float[] embedding) {
+        this.embedding = embedding;
+    }
+
+    @Column(nullable = false)
+    private boolean processed = false;
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
+    protected Article() {
+    }
     public Article(
             String title,
             String description,
@@ -76,7 +126,6 @@ public class Article {
         this.publishedAt = publishedAt;
         this.createdAt = LocalDateTime.now();
     }
-
     public Long getId() {
         return id;
     }

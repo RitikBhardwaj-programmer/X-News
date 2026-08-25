@@ -12,8 +12,8 @@
           "Segoe UI",
           sans-serif;
 
-  color: #f4f5f7;
-  background: #090b10;
+  color: #171717;
+  background: #f7f7f5;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,14 +24,9 @@ body {
 
   min-width: 320px;
 
-  background:
-          radial-gradient(
-                  circle at 50% -20%,
-                  #171a27 0%,
-                  #090b10 45%
-          );
+  background: #f7f7f5;
 
-  color: #f4f5f7;
+  color: #171717;
 }
 
 button,
@@ -73,11 +68,11 @@ a:hover {
 
   width: 100%;
 
-  background: rgba(9, 11, 16, 0.88);
+  background: rgba(247, 247, 245, 0.94);
 
   backdrop-filter: blur(14px);
 
-  border-bottom: 1px solid #20242e;
+  border-bottom: 1px solid #e5e5e0;
 }
 
 .header-inner {
@@ -94,14 +89,54 @@ a:hover {
 }
 
 .logo {
+  color: #171717;
+
   font-size: 22px;
   font-weight: 850;
   letter-spacing: -0.8px;
 }
 
 .tagline {
-  color: #7f8797;
+  color: #777777;
   font-size: 13px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-email {
+  color: #777777;
+  font-size: 12px;
+}
+
+.logout-button {
+  padding: 7px 11px;
+
+  border: 1px solid #d9d9d4;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #555555;
+
+  font-size: 11px;
+
+  transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          color 0.15s ease;
+}
+
+.logout-button:hover {
+  background: #ffffff;
+
+  border-color: #bdbdb7;
+
+  color: #171717;
 }
 
 
@@ -132,7 +167,7 @@ a:hover {
 .hero-eyebrow,
 .section-eyebrow,
 .event-kicker {
-  color: #9b7cff;
+  color: #c62828;
 
   font-size: 11px;
   font-weight: 800;
@@ -150,6 +185,8 @@ a:hover {
   letter-spacing: -3px;
 
   font-weight: 800;
+
+  color: #171717;
 }
 
 .home-hero p {
@@ -157,7 +194,7 @@ a:hover {
 
   margin: 0;
 
-  color: #8992a3;
+  color: #686868;
 
   font-size: 17px;
 
@@ -187,10 +224,12 @@ a:hover {
 
   font-size: 25px;
   letter-spacing: -0.5px;
+
+  color: #171717;
 }
 
 .section-count {
-  color: #727b8b;
+  color: #777777;
 
   font-size: 13px;
 }
@@ -223,16 +262,11 @@ a:hover {
 
   min-height: 220px;
 
-  background:
-          linear-gradient(
-                  145deg,
-                  #131720,
-                  #0f1219
-          );
+  background: #ffffff;
 
-  border: 1px solid #242a35;
+  border: 1px solid #e3e3de;
 
-  border-radius: 16px;
+  border-radius: 12px;
 
   cursor: pointer;
 
@@ -251,9 +285,9 @@ a:hover {
   left: 0;
   right: 0;
 
-  height: 2px;
+  height: 3px;
 
-  background: #7657df;
+  background: #c62828;
 
   opacity: 0;
 
@@ -263,10 +297,10 @@ a:hover {
 .event-card:hover {
   transform: translateY(-3px);
 
-  border-color: #3c355c;
+  border-color: #d4d4cf;
 
   box-shadow:
-          0 16px 45px rgba(0, 0, 0, 0.25);
+          0 14px 35px rgba(30, 30, 30, 0.08);
 }
 
 .event-card:hover::before {
@@ -283,7 +317,7 @@ a:hover {
 }
 
 .source-count {
-  color: #6f7888;
+  color: #777777;
 
   font-size: 12px;
 }
@@ -300,12 +334,14 @@ a:hover {
   letter-spacing: -0.4px;
 
   font-weight: 700;
+
+  color: #1b1b1b;
 }
 
 .event-card-description {
   margin: 12px 0 0;
 
-  color: #858e9f;
+  color: #6f6f6f;
 
   font-size: 13px;
 
@@ -331,7 +367,7 @@ a:hover {
 
   padding-top: 16px;
 
-  border-top: 1px solid #222731;
+  border-top: 1px solid #e8e8e3;
 }
 
 .metric {
@@ -343,7 +379,7 @@ a:hover {
 }
 
 .metric-label {
-  color: #656e7e;
+  color: #888888;
 
   font-size: 10px;
 
@@ -353,7 +389,7 @@ a:hover {
 }
 
 .metric strong {
-  color: #cbd0d8;
+  color: #444444;
 
   font-size: 12px;
 }
@@ -361,11 +397,11 @@ a:hover {
 .view-event {
   margin-left: auto;
 
-  color: #9b7cff;
+  color: #c62828;
 
   font-size: 12px;
 
-  font-weight: 650;
+  font-weight: 700;
 }
 
 
@@ -406,54 +442,54 @@ a:hover {
 }
 
 .verified {
-  color: #72d8a0;
+  color: #2e7d32;
 }
 
 .status-pill.verified {
-  background: rgba(70, 180, 120, 0.08);
-  border-color: rgba(70, 180, 120, 0.2);
+  background: #edf7ee;
+  border-color: #cde5cf;
 }
 
 .status-pill.verified .status-icon {
-  background: #2d9d67;
+  background: #2e7d32;
   color: white;
 }
 
 .false {
-  color: #ff7676;
+  color: #c62828;
 }
 
 .status-pill.false {
-  background: rgba(220, 70, 70, 0.08);
-  border-color: rgba(220, 70, 70, 0.2);
+  background: #fff0ef;
+  border-color: #f0cecb;
 }
 
 .status-pill.false .status-icon {
-  background: #d64c4c;
+  background: #c62828;
   color: white;
 }
 
 .contested {
-  color: #ffb85c;
+  color: #b45309;
 }
 
 .status-pill.contested {
-  background: rgba(220, 150, 50, 0.08);
-  border-color: rgba(220, 150, 50, 0.2);
+  background: #fff7e8;
+  border-color: #f0dfb9;
 }
 
 .status-pill.contested .status-icon {
-  background: #c88732;
+  background: #d97706;
   color: white;
 }
 
 .unverified {
-  color: #f0c65b;
+  color: #a16207;
 }
 
 .status-pill.unverified {
-  background: rgba(220, 175, 50, 0.08);
-  border-color: rgba(220, 175, 50, 0.2);
+  background: #fff9e8;
+  border-color: #efe0ae;
 }
 
 .status-pill.unverified .status-icon {
@@ -479,7 +515,7 @@ a:hover {
 
   background: transparent;
 
-  color: #8f98a9;
+  color: #737373;
 
   font-size: 13px;
 
@@ -487,7 +523,7 @@ a:hover {
 }
 
 .back-button:hover {
-  color: #b49eff;
+  color: #c62828;
 }
 
 .event-header {
@@ -510,6 +546,8 @@ a:hover {
   letter-spacing: -2.2px;
 
   font-weight: 800;
+
+  color: #171717;
 }
 
 .event-description {
@@ -517,7 +555,7 @@ a:hover {
 
   margin: 20px 0 0;
 
-  color: #8c95a5;
+  color: #6d6d6d;
 
   font-size: 16px;
 
@@ -545,17 +583,17 @@ a:hover {
 
   min-height: 125px;
 
-  background: #11151d;
+  background: #ffffff;
 
-  border: 1px solid #242a35;
+  border: 1px solid #e3e3de;
 
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .status-label {
   margin-bottom: 14px;
 
-  color: #687283;
+  color: #858585;
 
   font-size: 10px;
 
@@ -576,6 +614,8 @@ a:hover {
   font-size: 22px;
 
   font-weight: 750;
+
+  color: #222222;
 }
 
 .large-status-icon {
@@ -591,7 +631,7 @@ a:hover {
 
   background: currentColor;
 
-  color: #11151d;
+  color: #ffffff;
 
   font-size: 13px;
 }
@@ -599,21 +639,21 @@ a:hover {
 .status-help {
   margin-top: 8px;
 
-  color: #626c7d;
+  color: #777777;
 
   font-size: 11px;
 }
 
 .risk-low {
-  color: #72d8a0 !important;
+  color: #2e7d32 !important;
 }
 
 .risk-medium {
-  color: #ffb85c !important;
+  color: #d97706 !important;
 }
 
 .risk-high {
-  color: #ff7676 !important;
+  color: #c62828 !important;
 }
 
 
@@ -641,6 +681,8 @@ a:hover {
   font-size: 24px;
 
   letter-spacing: -0.5px;
+
+  color: #171717;
 }
 
 
@@ -651,16 +693,11 @@ a:hover {
 .analysis-empty {
   padding: 40px;
 
-  background:
-          radial-gradient(
-                  circle at 50% 0%,
-                  #1c1930,
-                  #11151d 60%
-          );
+  background: #fffdf9;
 
-  border: 1px solid #302a4a;
+  border: 1px solid #eadfce;
 
-  border-radius: 16px;
+  border-radius: 12px;
 
   text-align: center;
 }
@@ -678,9 +715,9 @@ a:hover {
 
   border-radius: 12px;
 
-  background: rgba(124, 92, 230, 0.13);
+  background: #fff0ef;
 
-  color: #aa90ff;
+  color: #c62828;
 
   font-size: 22px;
 }
@@ -689,6 +726,8 @@ a:hover {
   margin: 0 0 9px;
 
   font-size: 20px;
+
+  color: #202020;
 }
 
 .analysis-empty p {
@@ -696,7 +735,7 @@ a:hover {
 
   margin: 0 auto 23px;
 
-  color: #858e9f;
+  color: #707070;
 
   font-size: 14px;
 
@@ -713,11 +752,11 @@ a:hover {
 
   padding: 11px 17px;
 
-  border: 1px solid #8060e6;
+  border: 1px solid #b52020;
 
-  border-radius: 9px;
+  border-radius: 8px;
 
-  background: #7654dc;
+  background: #c62828;
 
   color: white;
 
@@ -731,7 +770,7 @@ a:hover {
 }
 
 .analyze-button:hover {
-  background: #6847cb;
+  background: #a61f1f;
 
   transform: translateY(-1px);
 }
@@ -749,17 +788,17 @@ a:hover {
 
   padding: 25px;
 
-  background: #11151d;
+  background: #ffffff;
 
-  border: 1px solid #242a35;
+  border: 1px solid #e3e3de;
 
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .analysis-card-label {
   margin-bottom: 12px;
 
-  color: #7e8797;
+  color: #858585;
 
   font-size: 10px;
 
@@ -771,7 +810,7 @@ a:hover {
 .analysis-card p {
   margin: 0;
 
-  color: #c2c9d4;
+  color: #454545;
 
   font-size: 15px;
 
@@ -798,18 +837,22 @@ a:hover {
 
   padding: 22px;
 
-  background: #11151d;
+  background: #ffffff;
 
-  border: 1px solid #242a35;
+  border: 1px solid #e3e3de;
 
-  border-radius: 14px;
+  border-radius: 12px;
 
   transition:
-          border-color 0.15s ease;
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
 }
 
 .source-card:hover {
-  border-color: #353c4a;
+  border-color: #d0d0ca;
+
+  box-shadow:
+          0 8px 25px rgba(30, 30, 30, 0.05);
 }
 
 .source-number {
@@ -823,11 +866,11 @@ a:hover {
   align-items: center;
   justify-content: center;
 
-  border-radius: 9px;
+  border-radius: 8px;
 
-  background: #191e28;
+  background: #f0f0ec;
 
-  color: #737d8e;
+  color: #777777;
 
   font-size: 11px;
 
@@ -841,7 +884,7 @@ a:hover {
 .source-name {
   margin-bottom: 7px;
 
-  color: #a28aff;
+  color: #c62828;
 
   font-size: 11px;
 
@@ -858,12 +901,14 @@ a:hover {
   font-size: 17px;
 
   line-height: 1.45;
+
+  color: #202020;
 }
 
 .source-content p {
   margin: 0 0 14px;
 
-  color: #8b94a4;
+  color: #707070;
 
   font-size: 13px;
 
@@ -871,11 +916,11 @@ a:hover {
 }
 
 .source-content a {
-  color: #a78bfa;
+  color: #b52020;
 
   font-size: 12px;
 
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .source-content a span {
@@ -890,11 +935,11 @@ a:hover {
 .fact-check-card {
   padding: 25px;
 
-  background: #11151d;
+  background: #ffffff;
 
-  border: 1px solid #242a35;
+  border: 1px solid #e3e3de;
 
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .fact-check-badge {
@@ -912,7 +957,7 @@ a:hover {
 
   font-weight: 750;
 
-  background: #181c25;
+  background: #f1f1ee;
 }
 
 .fact-check-badge > span {
@@ -928,7 +973,7 @@ a:hover {
 
   background: currentColor;
 
-  color: #11151d;
+  color: #ffffff;
 
   font-size: 10px;
 }
@@ -938,7 +983,7 @@ a:hover {
 
   padding-top: 21px;
 
-  border-top: 1px solid #242a35;
+  border-top: 1px solid #e5e5e0;
 }
 
 .fact-check-row {
@@ -952,7 +997,7 @@ a:hover {
 }
 
 .fact-check-row > span {
-  color: #687283;
+  color: #858585;
 
   font-size: 11px;
 
@@ -967,7 +1012,7 @@ a:hover {
 .fact-check-row p {
   margin: 0;
 
-  color: #c0c7d2;
+  color: #454545;
 
   font-size: 13px;
 
@@ -979,11 +1024,11 @@ a:hover {
 
   margin-top: 3px;
 
-  color: #a78bfa;
+  color: #b52020;
 
   font-size: 12px;
 
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .unverified-message {
@@ -991,13 +1036,15 @@ a:hover {
 
   padding-top: 20px;
 
-  border-top: 1px solid #242a35;
+  border-top: 1px solid #e5e5e0;
 }
 
 .unverified-message h3 {
   margin: 0 0 7px;
 
   font-size: 15px;
+
+  color: #202020;
 }
 
 .unverified-message p {
@@ -1005,11 +1052,148 @@ a:hover {
 
   margin: 0;
 
-  color: #7f8999;
+  color: #737373;
 
   font-size: 13px;
 
   line-height: 1.7;
+}
+
+
+/* =========================================
+   AUTHENTICATION
+========================================= */
+
+.auth-page {
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  background: #f7f7f5;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+
+  padding: 38px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e2dd;
+
+  border-radius: 14px;
+
+  box-shadow:
+          0 18px 50px rgba(30, 30, 30, 0.07);
+}
+
+.auth-eyebrow {
+  margin: 25px 0 8px;
+
+  color: #c62828;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+}
+
+.auth-card h1 {
+  margin: 0 0 8px;
+
+  font-size: 32px;
+
+  letter-spacing: -1px;
+
+  color: #171717;
+}
+
+.auth-description {
+  margin: 0 0 25px;
+
+  color: #737373;
+
+  font-size: 14px;
+}
+
+.auth-form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 17px;
+}
+
+.auth-form label {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+
+  color: #555555;
+
+  font-size: 12px;
+
+  font-weight: 650;
+}
+
+.auth-form input {
+  padding: 11px 13px;
+
+  border: 1px solid #d9d9d4;
+
+  border-radius: 8px;
+
+  outline: none;
+
+  background: #fbfbf9;
+
+  color: #171717;
+
+  transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
+}
+
+.auth-form input:focus {
+  border-color: #c62828;
+
+  box-shadow:
+          0 0 0 3px rgba(198, 40, 40, 0.08);
+}
+
+.auth-switch {
+  margin: 22px 0 0;
+
+  text-align: center;
+
+  color: #777777;
+
+  font-size: 12px;
+}
+
+.auth-switch button {
+  margin-left: 5px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #c62828;
+
+  font-weight: 700;
+}
+
+.auth-switch button:hover {
+  color: #a61f1f;
 }
 
 
@@ -1027,16 +1211,16 @@ a:hover {
   align-items: center;
   justify-content: center;
 
-  color: #747e8f;
+  color: #777777;
 }
 
 .loading-spinner,
 .button-spinner {
   border-radius: 50%;
 
-  border: 2px solid #2a2f3a;
+  border: 2px solid #deded9;
 
-  border-top-color: #9b7cff;
+  border-top-color: #c62828;
 
   animation: spin 0.8s linear infinite;
 }
@@ -1054,7 +1238,6 @@ a:hover {
 }
 
 @keyframes spin {
-
   to {
     transform: rotate(360deg);
   }
@@ -1068,19 +1251,21 @@ a:hover {
 .error-card {
   padding: 30px;
 
-  background: #13161d;
+  background: #ffffff;
 
-  border: 1px solid #3b2b32;
+  border: 1px solid #edcfcc;
 
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
 .error-card h2 {
   margin-top: 0;
+
+  color: #202020;
 }
 
 .error-card p {
-  color: #858e9f;
+  color: #737373;
 
   margin-bottom: 20px;
 }
@@ -1090,13 +1275,13 @@ a:hover {
 
   margin-bottom: 20px;
 
-  border: 1px solid #523039;
+  border: 1px solid #edcfcc;
 
   border-radius: 9px;
 
-  background: rgba(180, 60, 70, 0.08);
+  background: #fff4f3;
 
-  color: #ff9292;
+  color: #b52020;
 
   font-size: 13px;
 }
@@ -1109,21 +1294,25 @@ a:hover {
 .empty-state {
   padding: 55px;
 
-  border: 1px dashed #2a303c;
+  border: 1px dashed #d5d5d0;
 
-  border-radius: 14px;
+  border-radius: 12px;
 
   text-align: center;
+
+  background: #ffffff;
 }
 
 .empty-state h3 {
   margin: 0 0 8px;
+
+  color: #252525;
 }
 
 .empty-state p {
   margin: 0;
 
-  color: #747e8e;
+  color: #777777;
 
   font-size: 13px;
 }
@@ -1163,6 +1352,10 @@ a:hover {
     display: none;
   }
 
+  .user-email {
+    display: none;
+  }
+
   .container {
     padding: 35px 18px 70px;
   }
@@ -1194,16 +1387,22 @@ a:hover {
 
   .fact-check-row {
     grid-template-columns: 1fr;
+
     gap: 6px;
   }
 
   .source-card {
     gap: 13px;
+
     padding: 17px;
   }
 
   .source-number {
     width: 30px;
     height: 30px;
+  }
+
+  .auth-card {
+    padding: 30px 24px;
   }
 }

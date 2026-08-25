@@ -2,11 +2,26 @@ import { useEffect, useState } from "react";
 
 import EventCard from "./components/EventCard";
 import EventPage from "./pages/EventPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
 import { getEvents } from "./services/api";
+import { useAuth } from "./context/AuthContext";
 
 
 function App() {
+
+    const {
+        loading: authLoading,
+        isAuthenticated,
+        logout,
+        user
+    } = useAuth();
+
+
+    const [authPage, setAuthPage] =
+        useState("login");
+
 
     const [events, setEvents] =
         useState([]);
@@ -23,11 +38,17 @@ function App() {
 
     useEffect(() => {
 
+        if (!isAuthenticated) {
+            return;
+        }
+
+
         async function loadEvents() {
 
             try {
 
                 setLoading(true);
+                setError(null);
 
                 const data =
                     await getEvents();
@@ -50,8 +71,64 @@ function App() {
 
         loadEvents();
 
-    }, []);
+    }, [isAuthenticated]);
 
+
+    /*
+     * AUTHENTICATION LOADING
+     */
+
+    if (authLoading) {
+
+        return (
+            <div className="app">
+
+                <div className="loading-screen">
+
+                    <div className="loading-spinner" />
+
+                    <p>
+                        Loading X-NEWS...
+                    </p>
+
+                </div>
+
+            </div>
+        );
+    }
+
+
+    /*
+     * NOT AUTHENTICATED
+     */
+
+    if (!isAuthenticated) {
+
+        if (authPage === "register") {
+
+            return (
+                <RegisterPage
+                    onLogin={() =>
+                        setAuthPage("login")
+                    }
+                />
+            );
+        }
+
+
+        return (
+            <LoginPage
+                onRegister={() =>
+                    setAuthPage("register")
+                }
+            />
+        );
+    }
+
+
+    /*
+     * EVENT PAGE
+     */
 
     if (selectedEventId !== null) {
 
@@ -66,6 +143,10 @@ function App() {
     }
 
 
+    /*
+     * MAIN APPLICATION
+     */
+
     return (
         <div className="app">
 
@@ -77,8 +158,20 @@ function App() {
                         X-NEWS
                     </div>
 
-                    <div className="tagline">
-                        AI-powered news intelligence
+
+                    <div className="header-actions">
+
+                        <span className="user-email">
+                            {user?.email}
+                        </span>
+
+                        <button
+                            className="logout-button"
+                            onClick={logout}
+                        >
+                            Logout
+                        </button>
+
                     </div>
 
                 </div>

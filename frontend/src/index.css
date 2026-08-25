@@ -3,14 +3,15 @@ body,
 #root {
   margin: 0;
   padding: 0;
+
   width: 100%;
   min-height: 100%;
 }
 
 html {
-  background: #090b10;
+  background: #f7f7f5;
 }
 
 body {
-  background: #090b10;
+  background: #f7f7f5;
 }

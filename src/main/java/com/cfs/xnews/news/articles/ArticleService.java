@@ -43,7 +43,6 @@ public class ArticleService {
                 request.source(),
                 request.publishedAt()
         );
-
         // Save first → generates article ID
         Article saved = articleRepository.save(article);
 

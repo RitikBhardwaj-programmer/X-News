@@ -60,7 +60,8 @@ public class SecurityConfig {
                                 "/api/v1/articles/**",
                                 "/api/v1/sources/**",
                                 "/api/v1/events/**",
-                                "/api/v1/events"
+                                "/api/v1/events",
+                                "/test-ai/predict"
                         ).permitAll()
 
                         .anyRequest().authenticated()

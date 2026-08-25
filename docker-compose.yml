@@ -1,29 +1,20 @@
 services:
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.8.0
-    container_name: xnews-zookeeper
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: xnews-postgres
+    restart: unless-stopped
+
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      POSTGRES_DB: xnews
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
     ports:
-      - "2181:2181"
+      - "15432:5432"
 
-  kafka:
-    image: confluentinc/cp-kafka:7.8.0
-    container_name: xnews-kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - xnews_postgres_data:/var/lib/postgresql
 
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+volumes:
+  xnews_postgres_data:
