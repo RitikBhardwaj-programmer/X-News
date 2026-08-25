@@ -1,5 +1,6 @@
 package com.cfs.xnews.event;
 
+import com.cfs.xnews.event.dto.EventSummaryResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,9 +12,10 @@ import java.util.Optional;
 public class NewsEventController {
 
     NewsEventRepository eventRepository;
-
-    public NewsEventController(NewsEventRepository eventRepository) {
+    private final NewsEventService newsEventService;
+    public NewsEventController(NewsEventRepository eventRepository, NewsEventService newsEventService) {
         this.eventRepository = eventRepository;
+        this.newsEventService = newsEventService;
     }
 
     @GetMapping("/{id}")
@@ -22,9 +24,10 @@ public class NewsEventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<NewsEvent>> getAllEvents() {
+    public ResponseEntity<List<EventSummaryResponse>> getAllEvents() {
+
         return ResponseEntity.ok(
-                eventRepository.findAll()
+                newsEventService.getAllEvents()
         );
     }
 

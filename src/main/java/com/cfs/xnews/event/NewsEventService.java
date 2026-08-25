@@ -1,7 +1,10 @@
 package com.cfs.xnews.event;
 
+import com.cfs.xnews.event.dto.EventSummaryResponse;
 import com.cfs.xnews.news.articles.Article;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class NewsEventService {
@@ -24,5 +27,21 @@ public class NewsEventService {
         event.addArticle(article);
 
         return eventRepository.save(event);
+    }
+
+    public List<EventSummaryResponse> getAllEvents() {
+
+        return eventRepository
+                .findAllEventSummaries()
+                .stream()
+                .map(event -> new EventSummaryResponse(
+                        event.getId(),
+                        event.getTitle(),
+                        event.getDescription(),
+                        event.getSummary(),
+                        event.getCreatedAt(),
+                        event.getSourceCount()
+                ))
+                .toList();
     }
 }

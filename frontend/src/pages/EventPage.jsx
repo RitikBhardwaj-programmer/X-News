@@ -226,7 +226,7 @@ function EventPage({
         );
 
     const sourceCount =
-        event.articles?.length || 0;
+        event.sourceCount || 0;
 
 
     return (
