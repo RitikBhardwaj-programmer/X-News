@@ -16,7 +16,7 @@ public interface NewsEventRepository
             e.description AS description,
             e.summary AS summary,
             e.createdAt AS createdAt,
-            COUNT(DISTINCT a.source) AS sourceCount
+            COUNT(a) AS sourceCount 
         FROM NewsEvent e
         LEFT JOIN e.articles a
         GROUP BY

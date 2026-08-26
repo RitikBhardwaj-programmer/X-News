@@ -225,8 +225,7 @@ function EventPage({
             event.misinformationRisk
         );
 
-    const sourceCount =
-        event.sourceCount || 0;
+    const sourceCount = event.articles?.length || 0;
 
 
     return (
@@ -411,7 +410,7 @@ function EventPage({
                                     </>
                                 ) : (
                                     <>
-                                        ✦ Analyze with AI
+                                        ✦ Analyze
                                     </>
                                 )}
                             </button>
