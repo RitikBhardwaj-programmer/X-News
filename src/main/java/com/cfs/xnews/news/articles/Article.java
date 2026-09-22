@@ -38,7 +38,7 @@ public class Article {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, unique = true, columnDefinition = "TEXT")
     private String url;
 
     @Column(nullable = false, length = 255)

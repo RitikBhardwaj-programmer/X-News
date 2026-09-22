@@ -56,10 +56,12 @@ public class ArticleController {
         );
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteAllArticles() {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteArticle(
+            @PathVariable Long id
+    ) {
 
-        articleService.deleteAllArticles();
+        articleService.deleteArticle(id);
 
         return ResponseEntity.noContent().build();
     }

@@ -16,11 +16,15 @@ public class EventMatchingClient {
 
     public EventMatchingClient(
             @Value("${ai.event-matcher.url}")
-            String aiServiceUrl
+            String aiServiceUrl,
+
+            @Value("${ai.event-matcher.api-key}")
+            String apiKey
     ) {
         this.restClient = RestClient
                 .builder()
                 .baseUrl(aiServiceUrl)
+                .defaultHeader("X-API-Key", apiKey)
                 .build();
     }
 

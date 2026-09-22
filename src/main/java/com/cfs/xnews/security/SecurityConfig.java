@@ -114,13 +114,6 @@ public class SecurityConfig {
                         ).authenticated()
 
 
-                        // Fact checking
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/v1/events/*/fact-checks"
-                        ).authenticated()
-
-
                         // =========================================
                         // ADMIN ONLY
                         // =========================================
@@ -166,6 +159,13 @@ public class SecurityConfig {
                                 HttpMethod.DELETE,
                                 "/api/v1/events",
                                 "/api/v1/events/**"
+                        ).hasRole("ADMIN")
+
+
+                        // Fact checking - moderation gate, not open to any USER
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/events/*/fact-checks"
                         ).hasRole("ADMIN")
 
 

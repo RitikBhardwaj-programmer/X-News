@@ -13,6 +13,8 @@ import com.cfs.xnews.processing.processor.CategoryProcessor;
 import com.cfs.xnews.processing.processor.ContentCleaner;
 import com.cfs.xnews.processing.processor.KeywordProcessor;
 import com.cfs.xnews.processing.processor.SentimentProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,8 @@ import java.util.List;
 
 @Service
 public class ArticleProcessingService {
+
+    private static final Logger log = LoggerFactory.getLogger(ArticleProcessingService.class);
 
     private final NewsEventService newsEventService;
     private final SentimentProcessor sentimentProcessor;
@@ -76,9 +80,9 @@ public class ArticleProcessingService {
 
         if (article.isProcessed()) {
 
-            System.out.println(
-                    "Skipping already processed article: " +
-                            article.getId()
+            log.info(
+                    "Skipping already processed article: {}",
+                    article.getId()
             );
 
             return;
@@ -247,15 +251,12 @@ public class ArticleProcessingService {
             double probability =
                     response.probability();
 
-            System.out.println(
-                    "Candidate Event: "
-                            + candidateEvent.getId()
-                            + " | Similarity: "
-                            + similarity
-                            + " | Temporal: "
-                            + temporalScore
-                            + " | Probability: "
-                            + probability
+            log.debug(
+                    "Candidate Event: {} | Similarity: {} | Temporal: {} | Probability: {}",
+                    candidateEvent.getId(),
+                    similarity,
+                    temporalScore,
+                    probability
             );
 
             // =================================================
@@ -288,11 +289,10 @@ public class ArticleProcessingService {
             newsEvent =
                     bestEvent;
 
-            System.out.println(
-                    "MATCHED EXISTING EVENT: "
-                            + newsEvent.getId()
-                            + " | Probability: "
-                            + bestProbability
+            log.info(
+                    "MATCHED EXISTING EVENT: {} | Probability: {}",
+                    newsEvent.getId(),
+                    bestProbability
             );
 
         } else {
@@ -302,11 +302,10 @@ public class ArticleProcessingService {
                             article
                     );
 
-            System.out.println(
-                    "CREATED NEW EVENT: "
-                            + newsEvent.getId()
-                            + " | Best probability: "
-                            + bestProbability
+            log.info(
+                    "CREATED NEW EVENT: {} | Best probability: {}",
+                    newsEvent.getId(),
+                    bestProbability
             );
         }
 
@@ -318,17 +317,13 @@ public class ArticleProcessingService {
 
         articleRepository.save(article);
 
-        System.out.println(
-                "Processed article: "
-                        + article.getTitle()
-                        + " | Event: "
-                        + newsEvent.getId()
-                        + " | Category: "
-                        + article.getCategory()
-                        + " | Sentiment: "
-                        + article.getSentiment()
-                        + " | Keywords: "
-                        + article.getKeywords()
+        log.info(
+                "Processed article: {} | Event: {} | Category: {} | Sentiment: {} | Keywords: {}",
+                article.getTitle(),
+                newsEvent.getId(),
+                article.getCategory(),
+                article.getSentiment(),
+                article.getKeywords()
         );
     }
 

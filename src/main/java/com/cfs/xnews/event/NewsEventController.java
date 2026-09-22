@@ -11,7 +11,7 @@ import java.util.Optional;
 @RequestMapping("/api/v1/events")
 public class NewsEventController {
 
-    NewsEventRepository eventRepository;
+    private final NewsEventRepository eventRepository;
     private final NewsEventService newsEventService;
     public NewsEventController(NewsEventRepository eventRepository, NewsEventService newsEventService) {
         this.eventRepository = eventRepository;
@@ -31,10 +31,12 @@ public class NewsEventController {
         );
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteAllEvents() {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(
+            @PathVariable Long id
+    ) {
 
-        eventRepository.deleteAllInBatch();
+        newsEventService.deleteEvent(id);
 
         return ResponseEntity.noContent().build();
     }

@@ -71,8 +71,15 @@ public class ArticleService {
                 .toList();
     }
     @Transactional
-    public void deleteAllArticles() {
-        articleRepository.deleteAllInBatch();
+    public void deleteArticle(Long id) {
+
+        if (!articleRepository.existsById(id)) {
+            throw new RuntimeException(
+                    "Article not found"
+            );
+        }
+
+        articleRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)

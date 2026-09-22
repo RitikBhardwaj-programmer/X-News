@@ -5,11 +5,15 @@ package com.cfs.xnews.news.collection;
 import com.cfs.xnews.news.source.NewsSource;
 import com.cfs.xnews.news.source.NewsSourceRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 public class NewsCollectionScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(NewsCollectionScheduler.class);
 
     private final NewsSourceRepository sourceRepository;
     private final NewsCollectionService collectionService;
@@ -36,19 +40,19 @@ public class NewsCollectionScheduler {
                                         source.getId()
                                 );
 
-                System.out.println(
-                        "Collected " + count +
-                                " articles from " +
-                                source.getName()
+                log.info(
+                        "Collected {} articles from {}",
+                        count,
+                        source.getName()
                 );
 
             } catch (Exception e) {
 
-                System.err.println(
-                        "Failed to collect from " +
-                                source.getName() +
-                                ": " +
-                                e.getMessage()
+                log.error(
+                        "Failed to collect from {}: {}",
+                        source.getName(),
+                        e.getMessage(),
+                        e
                 );
             }
         }

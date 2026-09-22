@@ -130,4 +130,8 @@ public class NewsEvent {
     public List<Article> getArticles() {
         return articles;
     }
+
+    public List<FactCheck> getFactChecks() {
+        return factChecks;
+    }
 }
