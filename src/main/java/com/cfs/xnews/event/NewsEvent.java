@@ -86,12 +86,22 @@ public class NewsEvent {
 
         if (publishedAt != null) {
 
-            if (memberCount == 1 || publishedAt.isBefore(firstActivityAt)) {
-                firstActivityAt = publishedAt;
-            }
+            // Until the first article arrives both timestamps are just the
+            // creation time, so the founding article must set both outright.
+            if (memberCount == 1) {
 
-            if (publishedAt.isAfter(lastActivityAt)) {
+                firstActivityAt = publishedAt;
                 lastActivityAt = publishedAt;
+
+            } else {
+
+                if (publishedAt.isBefore(firstActivityAt)) {
+                    firstActivityAt = publishedAt;
+                }
+
+                if (publishedAt.isAfter(lastActivityAt)) {
+                    lastActivityAt = publishedAt;
+                }
             }
         }
     }

@@ -2,10 +2,12 @@ package com.cfs.xnews.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record EventMatchRequest(
-        double similarity,
+import java.util.List;
 
-        @JsonProperty("temporal_score")
-        double temporalScore
+public record EventMatchRequest(
+        @JsonProperty("article_embedding")
+        float[] articleEmbedding,
+
+        List<EventCandidate> candidates
 ) {
 }
