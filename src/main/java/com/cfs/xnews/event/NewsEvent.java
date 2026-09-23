@@ -2,8 +2,12 @@ package com.cfs.xnews.event;
 
 import com.cfs.xnews.analysis.FactCheck;
 import com.cfs.xnews.news.articles.Article;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Array;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +36,31 @@ public class NewsEvent {
 
     @OneToMany(mappedBy = "newsEvent")
     private List<FactCheck> factChecks = new ArrayList<>();
+
+    // V3 centroid + lifecycle (see the V3 plan, "Event centroid + lifecycle").
+    // centroidEmbedding is intentionally left untouched here - the online
+    // running-mean update is its own isolated piece, added separately so it
+    // can be swapped (e.g. for a recency-weighted centroid) without touching
+    // this bookkeeping.
+    @JsonIgnore
+    @Column(name = "centroid_embedding")
+    @JdbcTypeCode(SqlTypes.VECTOR)
+    @Array(length = 384)
+    private float[] centroidEmbedding;
+
+    @Column(nullable = false)
+    private int memberCount = 0;
+
+    @Column(nullable = false)
+    private LocalDateTime firstActivityAt;
+
+    @Column(nullable = false)
+    private LocalDateTime lastActivityAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EventStatus status = EventStatus.OPEN;
+
     public NewsEvent() {
     }
 
@@ -42,12 +71,29 @@ public class NewsEvent {
         this.title = title;
         this.description = description;
         this.createdAt = LocalDateTime.now();
+        this.firstActivityAt = this.createdAt;
+        this.lastActivityAt = this.createdAt;
     }
     public void addArticle(Article article) {
 
         articles.add(article);
 
         article.setNewsEvent(this);
+
+        memberCount++;
+
+        LocalDateTime publishedAt = article.getPublishedAt();
+
+        if (publishedAt != null) {
+
+            if (memberCount == 1 || publishedAt.isBefore(firstActivityAt)) {
+                firstActivityAt = publishedAt;
+            }
+
+            if (publishedAt.isAfter(lastActivityAt)) {
+                lastActivityAt = publishedAt;
+            }
+        }
     }
 
     @Column(columnDefinition = "TEXT")
@@ -133,5 +179,33 @@ public class NewsEvent {
 
     public List<FactCheck> getFactChecks() {
         return factChecks;
+    }
+
+    public float[] getCentroidEmbedding() {
+        return centroidEmbedding;
+    }
+
+    public void setCentroidEmbedding(float[] centroidEmbedding) {
+        this.centroidEmbedding = centroidEmbedding;
+    }
+
+    public int getMemberCount() {
+        return memberCount;
+    }
+
+    public LocalDateTime getFirstActivityAt() {
+        return firstActivityAt;
+    }
+
+    public LocalDateTime getLastActivityAt() {
+        return lastActivityAt;
+    }
+
+    public EventStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EventStatus status) {
+        this.status = status;
     }
 }
