@@ -1,11 +1,15 @@
 package com.cfs.xnews.processing;
 
+import com.cfs.xnews.event.CentroidUpdateStrategy;
 import com.cfs.xnews.event.EventMatchingClient;
 import com.cfs.xnews.event.NewsEvent;
+import com.cfs.xnews.event.NewsEventRepository;
 import com.cfs.xnews.event.NewsEventService;
 import com.cfs.xnews.event.dto.EmbeddingResponse;
+import com.cfs.xnews.event.dto.EventCandidate;
 import com.cfs.xnews.event.dto.EventMatchRequest;
 import com.cfs.xnews.event.dto.EventMatchResponse;
+import com.cfs.xnews.event.dto.EventMatchResult;
 import com.cfs.xnews.kafka.ArticleEvent;
 import com.cfs.xnews.news.articles.Article;
 import com.cfs.xnews.news.articles.ArticleRepository;
@@ -21,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -30,40 +36,53 @@ public class ArticleProcessingService {
     private static final Logger log = LoggerFactory.getLogger(ArticleProcessingService.class);
 
     private final NewsEventService newsEventService;
+    private final NewsEventRepository newsEventRepository;
     private final SentimentProcessor sentimentProcessor;
     private final CategoryProcessor categoryProcessor;
     private final KeywordProcessor keywordProcessor;
     private final ArticleRepository articleRepository;
     private final ContentCleaner contentCleaner;
     private final EventMatchingClient eventMatchingClient;
+    private final CentroidUpdateStrategy centroidUpdateStrategy;
 
     private final double eventMatchThreshold;
+    private final int candidateLimit;
 
     public ArticleProcessingService(
             NewsEventService newsEventService,
+            NewsEventRepository newsEventRepository,
             SentimentProcessor sentimentProcessor,
             CategoryProcessor categoryProcessor,
             KeywordProcessor keywordProcessor,
             ArticleRepository articleRepository,
             ContentCleaner contentCleaner,
             EventMatchingClient eventMatchingClient,
+            CentroidUpdateStrategy centroidUpdateStrategy,
 
             @Value("${ai.event-matcher.threshold:0.70}")
-            double eventMatchThreshold
+            double eventMatchThreshold,
+
+            @Value("${ai.event-matcher.candidate-limit:30}")
+            int candidateLimit
     ) {
 
         this.newsEventService = newsEventService;
+        this.newsEventRepository = newsEventRepository;
         this.sentimentProcessor = sentimentProcessor;
         this.categoryProcessor = categoryProcessor;
         this.keywordProcessor = keywordProcessor;
         this.articleRepository = articleRepository;
         this.contentCleaner = contentCleaner;
         this.eventMatchingClient = eventMatchingClient;
+        this.centroidUpdateStrategy = centroidUpdateStrategy;
         this.eventMatchThreshold = eventMatchThreshold;
+        this.candidateLimit = candidateLimit;
     }
 
     @Transactional
     public void process(ArticleEvent event) {
+
+        long startedAt = System.nanoTime();
 
         Article article = articleRepository
                 .findById(event.articleId())
@@ -134,10 +153,14 @@ public class ArticleProcessingService {
                         + "\n"
                         + article.getDescription();
 
+        long embedStartedAt = System.nanoTime();
+
         EmbeddingResponse embeddingResponse =
                 eventMatchingClient.generateEmbedding(
                         embeddingText
                 );
+
+        long embedMs = elapsedMs(embedStartedAt);
 
         List<Double> values =
                 embeddingResponse.embedding();
@@ -168,149 +191,17 @@ public class ArticleProcessingService {
         articleRepository.save(article);
 
         // =====================================================
-        // 7. FIND NEAREST ARTICLES USING PGVECTOR
+        // 7. MATCH AGAINST OPEN EVENT CENTROIDS, OR CREATE
         // =====================================================
 
-        StringBuilder vectorBuilder = new StringBuilder("[");
-
-        for (int i = 0; i < embedding.length; i++) {
-
-            if (i > 0) {
-                vectorBuilder.append(",");
-            }
-
-            vectorBuilder.append(embedding[i]);
-        }
-
-        vectorBuilder.append("]");
-
-        String pgVector = vectorBuilder.toString();
-
-        List<Object[]> nearestArticles =
-                articleRepository
-                        .findNearestArticleIdsWithSimilarity(
-                                pgVector,
-                                article.getId(),
-                                30
-                        );
+        NewsEvent newsEvent = matchOrCreateEvent(
+                article,
+                embedding,
+                embedMs
+        );
 
         // =====================================================
-        // 8. FIND BEST EVENT
-        // =====================================================
-
-        NewsEvent bestEvent = null;
-
-        double bestProbability = -1.0;
-
-        for (Object[] row : nearestArticles) {
-
-            Long candidateArticleId =
-                    ((Number) row[0]).longValue();
-
-            double similarity =
-                    ((Number) row[1]).doubleValue();
-
-            Article candidateArticle =
-                    articleRepository
-                            .findById(candidateArticleId)
-                            .orElse(null);
-
-            if (candidateArticle == null) {
-                continue;
-            }
-
-            NewsEvent candidateEvent =
-                    candidateArticle.getNewsEvent();
-
-            if (candidateEvent == null) {
-                continue;
-            }
-
-            // =================================================
-            // TEMPORAL SCORE
-            // =================================================
-
-            double temporalScore =
-                    calculateTemporalScore(
-                            article.getPublishedAt(),
-                            candidateArticle.getPublishedAt()
-                    );
-
-            // =================================================
-            // AI EVENT MATCHING
-            // =================================================
-
-            EventMatchResponse response =
-                    eventMatchingClient.predict(
-                            new EventMatchRequest(
-                                    similarity,
-                                    temporalScore
-                            )
-                    );
-
-            double probability =
-                    response.probability();
-
-            log.debug(
-                    "Candidate Event: {} | Similarity: {} | Temporal: {} | Probability: {}",
-                    candidateEvent.getId(),
-                    similarity,
-                    temporalScore,
-                    probability
-            );
-
-            // =================================================
-            // KEEP HIGHEST PROBABILITY
-            // =================================================
-
-            if (probability > bestProbability) {
-
-                bestProbability =
-                        probability;
-
-                bestEvent =
-                        candidateEvent;
-            }
-        }
-
-        // =====================================================
-        // 9. EVENT DECISION
-        // =====================================================
-
-        NewsEvent newsEvent;
-
-        if (
-                bestEvent != null
-                        && bestProbability >= eventMatchThreshold
-        ) {
-
-            bestEvent.addArticle(article);
-
-            newsEvent =
-                    bestEvent;
-
-            log.info(
-                    "MATCHED EXISTING EVENT: {} | Probability: {}",
-                    newsEvent.getId(),
-                    bestProbability
-            );
-
-        } else {
-
-            newsEvent =
-                    newsEventService.createEvent(
-                            article
-                    );
-
-            log.info(
-                    "CREATED NEW EVENT: {} | Best probability: {}",
-                    newsEvent.getId(),
-                    bestProbability
-            );
-        }
-
-        // =====================================================
-        // 10. MARK PROCESSED
+        // 8. MARK PROCESSED
         // =====================================================
 
         article.setProcessed(true);
@@ -318,33 +209,214 @@ public class ArticleProcessingService {
         articleRepository.save(article);
 
         log.info(
-                "Processed article: {} | Event: {} | Category: {} | Sentiment: {} | Keywords: {}",
-                article.getTitle(),
+                "Processed article={} event={} category={} sentiment={} totalMs={}",
+                article.getId(),
                 newsEvent.getId(),
                 article.getCategory(),
                 article.getSentiment(),
-                article.getKeywords()
+                elapsedMs(startedAt)
         );
     }
 
     // =========================================================
-    // TEMPORAL SCORE
+    // EVENT MATCHING
     // =========================================================
 
-    private double calculateTemporalScore(
-            LocalDateTime dateA,
-            LocalDateTime dateB
+    private NewsEvent matchOrCreateEvent(
+            Article article,
+            float[] embedding,
+            long embedMs
     ) {
 
-        if (dateA == null || dateB == null) {
+        long retrievalStartedAt = System.nanoTime();
+
+        List<NewsEvent> candidates =
+                newsEventRepository.findNearestOpenEvents(
+                        toPgVector(embedding),
+                        candidateLimit
+                );
+
+        long retrievalMs = elapsedMs(retrievalStartedAt);
+
+        NewsEvent bestEvent = null;
+        double bestProbability = -1.0;
+        long predictMs = 0;
+
+        if (!candidates.isEmpty()) {
+
+            List<EventCandidate> eventCandidates =
+                    candidates.stream()
+                            .map(candidate -> new EventCandidate(
+                                    candidate.getId(),
+                                    candidate.getCentroidEmbedding(),
+                                    calculateTemporalScore(
+                                            article.getPublishedAt(),
+                                            candidate.getLastActivityAt()
+                                    )
+                            ))
+                            .toList();
+
+            long predictStartedAt = System.nanoTime();
+
+            EventMatchResponse response =
+                    eventMatchingClient.predict(
+                            new EventMatchRequest(
+                                    embedding,
+                                    eventCandidates
+                            )
+                    );
+
+            predictMs = elapsedMs(predictStartedAt);
+
+            Map<Long, NewsEvent> candidatesById = new HashMap<>();
+
+            for (NewsEvent candidate : candidates) {
+                candidatesById.put(candidate.getId(), candidate);
+            }
+
+            for (EventMatchResult result : response.results()) {
+
+                NewsEvent candidate =
+                        candidatesById.get(result.eventId());
+
+                if (candidate == null) {
+                    continue;
+                }
+
+                log.debug(
+                        "Candidate event={} similarity={} probability={}",
+                        result.eventId(),
+                        result.similarity(),
+                        result.probability()
+                );
+
+                if (result.probability() > bestProbability) {
+
+                    bestProbability = result.probability();
+                    bestEvent = candidate;
+                }
+            }
+        }
+
+        boolean matched =
+                bestEvent != null
+                        && bestProbability >= eventMatchThreshold;
+
+        NewsEvent newsEvent;
+
+        if (matched) {
+
+            // Must run before addArticle(), which increments memberCount.
+            bestEvent.setCentroidEmbedding(
+                    centroidUpdateStrategy.update(
+                            bestEvent.getCentroidEmbedding(),
+                            bestEvent.getMemberCount(),
+                            embedding
+                    )
+            );
+
+            bestEvent.addArticle(article);
+
+            newsEvent = bestEvent;
+
+        } else {
+
+            newsEvent = newsEventService.createEvent(article);
+
+            newsEvent.setCentroidEmbedding(
+                    centroidUpdateStrategy.update(
+                            null,
+                            0,
+                            embedding
+                    )
+            );
+        }
+
+        log.info(
+                "Event match article={} decision={} event={} candidates={} bestProbability={} probabilityBucket={} embedMs={} retrievalMs={} predictMs={}",
+                article.getId(),
+                matched ? "ATTACHED" : "CREATED",
+                newsEvent.getId(),
+                candidates.size(),
+                bestProbability,
+                probabilityBucket(bestProbability),
+                embedMs,
+                retrievalMs,
+                predictMs
+        );
+
+        return newsEvent;
+    }
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private static String toPgVector(float[] embedding) {
+
+        StringBuilder builder = new StringBuilder("[");
+
+        for (int i = 0; i < embedding.length; i++) {
+
+            if (i > 0) {
+                builder.append(",");
+            }
+
+            builder.append(embedding[i]);
+        }
+
+        return builder.append("]").toString();
+    }
+
+    private static long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
+    }
+
+    // Shows whether the match threshold is behaving: a cliff right at the
+    // threshold with nothing in the top buckets is the warning sign.
+    static String probabilityBucket(double probability) {
+
+        if (probability < 0) {
+            return "none";
+        }
+
+        if (probability < 0.5) {
+            return "0.0-0.5";
+        }
+
+        if (probability < 0.7) {
+            return "0.5-0.7";
+        }
+
+        if (probability < 0.8) {
+            return "0.7-0.8";
+        }
+
+        if (probability < 0.9) {
+            return "0.8-0.9";
+        }
+
+        return "0.9-1.0";
+    }
+
+    // =========================================================
+    // TEMPORAL SCORE (article date vs. the event's last activity)
+    // =========================================================
+
+    static double calculateTemporalScore(
+            LocalDateTime articleDate,
+            LocalDateTime eventLastActivity
+    ) {
+
+        if (articleDate == null || eventLastActivity == null) {
             return 0.5;
         }
 
         long days =
                 Math.abs(
                         ChronoUnit.DAYS.between(
-                                dateA.toLocalDate(),
-                                dateB.toLocalDate()
+                                articleDate.toLocalDate(),
+                                eventLastActivity.toLocalDate()
                         )
                 );
 
