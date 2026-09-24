@@ -3,12 +3,25 @@ package com.cfs.xnews.ai;
 import com.cfs.xnews.event.NewsEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
+import com.google.genai.errors.ApiException;
 import com.google.genai.types.GenerateContentResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 public class AIServiceImpl implements AIService {
+
+    private static final Logger log = LoggerFactory.getLogger(AIServiceImpl.class);
+
+    // Overloaded (503), rate limited (429) or other transient server errors.
+    private static final Set<Integer> RETRYABLE_CODES = Set.of(429, 500, 502, 503, 504);
+
+    // Wait before each retry; package-private so tests can skip the waiting.
+    long[] retryDelaysMs = {1_000, 2_000};
 
     private final Client client;
     private final ObjectMapper objectMapper;
@@ -78,11 +91,7 @@ public class AIServiceImpl implements AIService {
         );
 
         GenerateContentResponse response =
-                client.models.generateContent(
-                        model,
-                        prompt,
-                        null
-                );
+                generateWithRetry(prompt);
 
         String json = cleanJson(response.text());
 
@@ -97,6 +106,62 @@ public class AIServiceImpl implements AIService {
 
             throw new RuntimeException(
                     "Failed to parse Gemini response: " + json,
+                    e
+            );
+        }
+    }
+
+    private GenerateContentResponse generateWithRetry(String prompt) {
+
+        for (int attempt = 0; ; attempt++) {
+
+            try {
+                return callGemini(prompt);
+
+            } catch (ApiException e) {
+
+                if (!RETRYABLE_CODES.contains(e.code())) {
+                    throw e;
+                }
+
+                if (attempt >= retryDelaysMs.length) {
+                    throw new AIServiceUnavailableException(
+                            "The AI service is busy right now. Please try again in a minute.",
+                            e
+                    );
+                }
+
+                log.warn(
+                        "Gemini call failed with {} (attempt {} of {}), retrying in {} ms",
+                        e.code(),
+                        attempt + 1,
+                        retryDelaysMs.length + 1,
+                        retryDelaysMs[attempt]
+                );
+
+                sleep(retryDelaysMs[attempt]);
+            }
+        }
+    }
+
+    // Seam for tests: the only place that talks to Gemini.
+    GenerateContentResponse callGemini(String prompt) {
+
+        return client.models.generateContent(
+                model,
+                prompt,
+                null
+        );
+    }
+
+    private static void sleep(long millis) {
+
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AIServiceUnavailableException(
+                    "Interrupted while waiting to retry the AI service",
                     e
             );
         }
