@@ -22,10 +22,15 @@ async function handleResponse(response) {
         const text =
             await response.text();
 
-        throw new Error(
-            text ||
-            `Request failed (${response.status})`
-        );
+        const error =
+            new Error(
+                text ||
+                `Request failed (${response.status})`
+            );
+
+        error.status = response.status;
+
+        throw error;
     }
 
     return response.json();

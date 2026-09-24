@@ -1,87 +1,30 @@
 import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router";
+
+import Header from "../components/Header";
 
 import {
     getEvent,
     analyzeEvent
 } from "../services/api";
 
-
-function verificationInfo(status) {
-
-    switch (status) {
-
-        case "VERIFIED":
-            return {
-                icon: "✓",
-                label: "Verified",
-                className: "verified"
-            };
-
-        case "FALSE":
-            return {
-                icon: "!",
-                label: "False",
-                className: "false"
-            };
-
-        case "CONTESTED":
-            return {
-                icon: "!",
-                label: "Contested",
-                className: "contested"
-            };
-
-        default:
-            return {
-                icon: "?",
-                label: "Unverified",
-                className: "unverified"
-            };
-    }
-}
+import {
+    verificationInfo,
+    riskInfo
+} from "../utils/eventLabels";
 
 
-function riskInfo(risk) {
-
-    if (risk == null) {
-        return {
-            value: "—",
-            label: "Not analyzed",
-            className: ""
-        };
-    }
-
-    const percentage =
-        Math.round(risk * 100);
-
-    if (risk < 0.3) {
-        return {
-            value: `${percentage}%`,
-            label: "Low risk",
-            className: "risk-low"
-        };
-    }
-
-    if (risk < 0.7) {
-        return {
-            value: `${percentage}%`,
-            label: "Moderate risk",
-            className: "risk-medium"
-        };
-    }
-
-    return {
-        value: `${percentage}%`,
-        label: "High risk",
-        className: "risk-high"
-    };
-}
+const NOT_ANALYZED = {
+    value: "—",
+    label: "Not analyzed",
+    className: ""
+};
 
 
-function EventPage({
-                       eventId,
-                       onBack
-                   }) {
+function EventPage() {
+
+    const { id: eventId } =
+        useParams();
 
     const [event, setEvent] =
         useState(null);
@@ -103,6 +46,7 @@ function EventPage({
             try {
 
                 setLoading(true);
+                setError(null);
 
                 const data =
                     await getEvent(eventId);
@@ -145,7 +89,9 @@ function EventPage({
             console.error(error);
 
             setError(
-                "AI analysis failed. Please try again."
+                error.status === 503
+                    ? "The AI service is busy right now. Please try again in a minute."
+                    : "AI analysis failed. Please try again."
             );
 
         } finally {
@@ -159,12 +105,25 @@ function EventPage({
 
         return (
             <div className="app">
-                <div className="loading-screen">
-                    <div className="loading-spinner" />
-                    <p>
-                        Loading story...
-                    </p>
-                </div>
+
+                <Header />
+
+                <main
+                    className="container"
+                    aria-busy="true"
+                >
+                    <div className="skeleton skeleton-line short" />
+                    <div className="skeleton skeleton-title" />
+                    <div className="skeleton skeleton-line" />
+                    <div className="skeleton skeleton-line" />
+
+                    <div className="status-grid">
+                        <div className="skeleton skeleton-block" />
+                        <div className="skeleton skeleton-block" />
+                        <div className="skeleton skeleton-block" />
+                    </div>
+                </main>
+
             </div>
         );
     }
@@ -175,28 +134,16 @@ function EventPage({
         return (
             <div className="app">
 
-                <header className="header">
-                    <div className="header-inner">
-
-                        <div className="logo">
-                            X-NEWS
-                        </div>
-
-                        <div className="tagline">
-                            AI-powered news intelligence
-                        </div>
-
-                    </div>
-                </header>
+                <Header />
 
                 <main className="container">
 
-                    <button
+                    <Link
+                        to="/"
                         className="back-button"
-                        onClick={onBack}
                     >
                         ← Back to news
-                    </button>
+                    </Link>
 
                     <div className="error-card">
                         <h2>
@@ -223,7 +170,7 @@ function EventPage({
     const risk =
         riskInfo(
             event.misinformationRisk
-        );
+        ) || NOT_ANALYZED;
 
     const sourceCount = event.articles?.length || 0;
 
@@ -231,35 +178,19 @@ function EventPage({
     return (
         <div className="app">
 
-            {/* HEADER */}
-
-            <header className="header">
-
-                <div className="header-inner">
-
-                    <div className="logo">
-                        X-NEWS
-                    </div>
-
-                    <div className="tagline">
-                        AI-powered news intelligence
-                    </div>
-
-                </div>
-
-            </header>
+            <Header />
 
 
             {/* MAIN */}
 
             <main className="container">
 
-                <button
+                <Link
+                    to="/"
                     className="back-button"
-                    onClick={onBack}
                 >
                     ← Back to news
-                </button>
+                </Link>
 
 
                 {/* EVENT HEADER */}
@@ -348,6 +279,12 @@ function EventPage({
 
                 </section>
 
+                <p className="ai-note">
+                    Disagreement and misinformation risk are
+                    AI estimates, not fact-checks. Treat them
+                    as a starting point, not a verdict.
+                </p>
+
 
                 {/* ERROR */}
 
@@ -402,6 +339,7 @@ function EventPage({
                                 className="analyze-button"
                                 onClick={handleAnalyze}
                                 disabled={analyzing}
+                                aria-busy={analyzing}
                             >
                                 {analyzing ? (
                                     <>
@@ -494,7 +432,7 @@ function EventPage({
                                 >
 
                                     <div className="source-number">
-                                        0{index + 1}
+                                        {String(index + 1).padStart(2, "0")}
                                     </div>
 
                                     <div className="source-content">

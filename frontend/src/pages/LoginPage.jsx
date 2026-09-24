@@ -1,12 +1,16 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router";
+
 import { useAuth } from "../context/AuthContext";
 
 
-function LoginPage({ onRegister }) {
+function LoginPage() {
 
     const {
         login
     } = useAuth();
+
+    const location = useLocation();
 
 
     const [email, setEmail] =
@@ -129,11 +133,12 @@ function LoginPage({ onRegister }) {
                 <p className="auth-switch">
                     Don't have an account?
 
-                    <button
-                        onClick={onRegister}
+                    <Link
+                        to="/register"
+                        state={location.state}
                     >
                         Create account
-                    </button>
+                    </Link>
                 </p>
 
             </div>

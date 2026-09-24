@@ -651,6 +651,7 @@ The frontend is built using:
 
 ``` text
 React
+React Router
 Vite
 JavaScript
 CSS
@@ -668,6 +669,8 @@ The frontend provides:
 -   loading/error states
 -   event counts
 -   authenticated API requests
+-   shareable URLs (`/events/:id`) with working back/forward
+-   light and dark themes (follows the OS setting, with a header toggle)
 
 The frontend uses:
 
@@ -676,6 +679,11 @@ VITE_API_URL
 ```
 
 for backend configuration rather than hard-coding the API URL.
+
+Routing uses real paths (for example `/events/42`), so a production static
+host must serve `index.html` for unknown paths (an SPA fallback). Otherwise a
+refresh or a shared link returns 404. `vite dev` and `vite preview` already do
+this.
 
 ------------------------------------------------------------------------
 

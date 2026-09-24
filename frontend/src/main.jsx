@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
 
 import "./index.css";
 import "./App.css";
@@ -14,11 +15,15 @@ createRoot(
 
     <StrictMode>
 
-        <AuthProvider>
+        <BrowserRouter>
 
-            <App />
+            <AuthProvider>
 
-        </AuthProvider>
+                <App />
+
+            </AuthProvider>
+
+        </BrowserRouter>
 
     </StrictMode>
 );

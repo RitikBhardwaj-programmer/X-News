@@ -1,85 +1,38 @@
-function getVerificationStatus(status) {
+import { Link } from "react-router";
 
-    switch (status) {
-
-        case "VERIFIED":
-            return {
-                icon: "✓",
-                label: "Verified",
-                className: "verified"
-            };
-
-        case "FALSE":
-            return {
-                icon: "!",
-                label: "False",
-                className: "false"
-            };
-
-        case "CONTESTED":
-            return {
-                icon: "!",
-                label: "Contested",
-                className: "contested"
-            };
-
-        default:
-            return {
-                icon: "?",
-                label: "Unverified",
-                className: "unverified"
-            };
-    }
-}
+import {
+    verificationInfo,
+    riskInfo,
+    formatRelativeTime,
+    AI_ESTIMATE_NOTE
+} from "../utils/eventLabels";
 
 
-function getRiskLevel(risk) {
-
-    if (risk == null) {
-        return null;
-    }
-
-    if (risk < 0.3) {
-        return {
-            label: "Low risk",
-            className: "risk-low"
-        };
-    }
-
-    if (risk < 0.7) {
-        return {
-            label: "Moderate risk",
-            className: "risk-medium"
-        };
-    }
-
-    return {
-        label: "High risk",
-        className: "risk-high"
-    };
-}
-
-
-function EventCard({ event, onClick }) {
+function EventCard({ event }) {
 
     const verification =
-        getVerificationStatus(
+        verificationInfo(
             event.verificationStatus
         );
 
     const risk =
-        getRiskLevel(
+        riskInfo(
             event.misinformationRisk
         );
 
     const sourceCount =
         event.sourceCount || 0;
 
+    const age =
+        formatRelativeTime(
+            event.createdAt
+        );
+
 
     return (
-        <article
+        <Link
+            to={`/events/${event.id}`}
             className="event-card"
-            onClick={onClick}
         >
 
             <div className="event-card-top">
@@ -99,6 +52,15 @@ function EventCard({ event, onClick }) {
                     {sourceCount === 1
                         ? "source"
                         : "sources"}
+
+                    {age && (
+                        <>
+                            {" · "}
+                            <time dateTime={event.createdAt}>
+                                {age}
+                            </time>
+                        </>
+                    )}
                 </span>
 
             </div>
@@ -119,7 +81,10 @@ function EventCard({ event, onClick }) {
             <div className="event-card-bottom">
 
                 {event.disagreementLevel && (
-                    <span className="metric">
+                    <span
+                        className="metric"
+                        title={AI_ESTIMATE_NOTE}
+                    >
                         <span className="metric-label">
                             Disagreement
                         </span>
@@ -132,7 +97,10 @@ function EventCard({ event, onClick }) {
 
 
                 {risk && (
-                    <span className="metric">
+                    <span
+                        className="metric"
+                        title={AI_ESTIMATE_NOTE}
+                    >
                         <span className="metric-label">
                             AI risk
                         </span>
@@ -140,9 +108,7 @@ function EventCard({ event, onClick }) {
                         <strong
                             className={risk.className}
                         >
-                            {Math.round(
-                                event.misinformationRisk * 100
-                            )}%
+                            {risk.value}
                         </strong>
                     </span>
                 )}
@@ -154,7 +120,7 @@ function EventCard({ event, onClick }) {
 
             </div>
 
-        </article>
+        </Link>
     );
 }
 

@@ -2,6 +2,8 @@ package com.cfs.xnews.event;
 
 import com.cfs.xnews.analysis.FactCheck;
 import com.cfs.xnews.analysis.FactCheckRepository;
+import com.cfs.xnews.event.dto.EventSummaryProjection;
+import com.cfs.xnews.event.dto.EventSummaryResponse;
 import com.cfs.xnews.news.articles.Article;
 import com.cfs.xnews.news.articles.ArticleRepository;
 import org.junit.jupiter.api.Test;
@@ -15,6 +17,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +56,30 @@ class NewsEventServiceTest {
         verify(articleRepository).saveAll(List.of(article));
         verify(factCheckRepository).deleteAll(event.getFactChecks());
         verify(eventRepository).delete(event);
+    }
+
+    @Test
+    void getAllEvents_includesAnalysisFieldsInSummary() {
+
+        EventSummaryProjection projection = mock(EventSummaryProjection.class);
+        when(projection.getId()).thenReturn(7L);
+        when(projection.getTitle()).thenReturn("title");
+        when(projection.getSourceCount()).thenReturn(3L);
+        when(projection.getVerificationStatus()).thenReturn("CONTESTED");
+        when(projection.getDisagreementLevel()).thenReturn("HIGH");
+        when(projection.getMisinformationRisk()).thenReturn(0.42);
+
+        when(eventRepository.findAllEventSummaries()).thenReturn(List.of(projection));
+
+        List<EventSummaryResponse> events = newsEventService.getAllEvents();
+
+        assertThat(events).hasSize(1);
+        EventSummaryResponse event = events.get(0);
+        assertThat(event.id()).isEqualTo(7L);
+        assertThat(event.sourceCount()).isEqualTo(3L);
+        assertThat(event.verificationStatus()).isEqualTo("CONTESTED");
+        assertThat(event.disagreementLevel()).isEqualTo("HIGH");
+        assertThat(event.misinformationRisk()).isEqualTo(0.42);
     }
 
     @Test

@@ -8,6 +8,9 @@ public record EventSummaryResponse(
         String description,
         String summary,
         LocalDateTime createdAt,
-        Long sourceCount
+        Long sourceCount,
+        String verificationStatus,
+        String disagreementLevel,
+        Double misinformationRisk
 ) {
 }
