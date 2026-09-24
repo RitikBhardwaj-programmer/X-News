@@ -49,7 +49,10 @@ public class NewsEventService {
                         event.getDescription(),
                         event.getSummary(),
                         event.getCreatedAt(),
-                        event.getSourceCount()
+                        event.getSourceCount(),
+                        event.getVerificationStatus(),
+                        event.getDisagreementLevel(),
+                        event.getMisinformationRisk()
                 ))
                 .toList();
     }

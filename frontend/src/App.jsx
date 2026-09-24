@@ -1,77 +1,71 @@
-import { useEffect, useState } from "react";
+import {
+    Navigate,
+    Route,
+    Routes,
+    useLocation
+} from "react-router";
 
-import EventCard from "./components/EventCard";
 import EventPage from "./pages/EventPage";
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
-import { getEvents } from "./services/api";
 import { useAuth } from "./context/AuthContext";
+
+
+/*
+ * Sends signed-out users to /login, remembering
+ * where they were going so login can return them.
+ */
+function RequireAuth({ children }) {
+
+    const { isAuthenticated } = useAuth();
+
+    const location = useLocation();
+
+    if (!isAuthenticated) {
+
+        return (
+            <Navigate
+                to="/login"
+                replace
+                state={{ from: location.pathname }}
+            />
+        );
+    }
+
+    return children;
+}
+
+
+/*
+ * Keeps signed-in users off the login and register pages.
+ */
+function GuestOnly({ children }) {
+
+    const { isAuthenticated } = useAuth();
+
+    const location = useLocation();
+
+    if (isAuthenticated) {
+
+        return (
+            <Navigate
+                to={location.state?.from || "/"}
+                replace
+            />
+        );
+    }
+
+    return children;
+}
 
 
 function App() {
 
     const {
-        loading: authLoading,
-        isAuthenticated,
-        logout,
-        user
+        loading: authLoading
     } = useAuth();
-
-
-    const [authPage, setAuthPage] =
-        useState("login");
-
-
-    const [events, setEvents] =
-        useState([]);
-
-    const [selectedEventId, setSelectedEventId] =
-        useState(null);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [error, setError] =
-        useState(null);
-
-
-    useEffect(() => {
-
-        if (!isAuthenticated) {
-            return;
-        }
-
-
-        async function loadEvents() {
-
-            try {
-
-                setLoading(true);
-                setError(null);
-
-                const data =
-                    await getEvents();
-
-                setEvents(data);
-
-            } catch (error) {
-
-                console.error(error);
-
-                setError(
-                    "Unable to load news."
-                );
-
-            } finally {
-
-                setLoading(false);
-            }
-        }
-
-        loadEvents();
-
-    }, [isAuthenticated]);
 
 
     /*
@@ -98,228 +92,53 @@ function App() {
     }
 
 
-    /*
-     * NOT AUTHENTICATED
-     */
-
-    if (!isAuthenticated) {
-
-        if (authPage === "register") {
-
-            return (
-                <RegisterPage
-                    onLogin={() =>
-                        setAuthPage("login")
-                    }
-                />
-            );
-        }
-
-
-        return (
-            <LoginPage
-                onRegister={() =>
-                    setAuthPage("register")
-                }
-            />
-        );
-    }
-
-
-    /*
-     * EVENT PAGE
-     */
-
-    if (selectedEventId !== null) {
-
-        return (
-            <EventPage
-                eventId={selectedEventId}
-                onBack={() =>
-                    setSelectedEventId(null)
-                }
-            />
-        );
-    }
-
-
-    /*
-     * MAIN APPLICATION
-     */
-
     return (
-        <div className="app">
+        <Routes>
 
-            <header className="header">
+            <Route
+                path="/"
+                element={
+                    <RequireAuth>
+                        <HomePage />
+                    </RequireAuth>
+                }
+            />
 
-                <div className="header-inner">
+            <Route
+                path="/events/:id"
+                element={
+                    <RequireAuth>
+                        <EventPage />
+                    </RequireAuth>
+                }
+            />
 
-                    <div className="logo">
-                        X-NEWS
-                    </div>
+            <Route
+                path="/login"
+                element={
+                    <GuestOnly>
+                        <LoginPage />
+                    </GuestOnly>
+                }
+            />
 
+            <Route
+                path="/register"
+                element={
+                    <GuestOnly>
+                        <RegisterPage />
+                    </GuestOnly>
+                }
+            />
 
-                    <div className="header-actions">
+            <Route
+                path="*"
+                element={
+                    <Navigate to="/" replace />
+                }
+            />
 
-                        <span className="user-email">
-                            {user?.email}
-                        </span>
-
-                        <button
-                            className="logout-button"
-                            onClick={logout}
-                        >
-                            Logout
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </header>
-
-
-            <main className="container">
-
-                {loading ? (
-
-                    <div className="loading-screen">
-
-                        <div className="loading-spinner" />
-
-                        <p>
-                            Loading the latest stories...
-                        </p>
-
-                    </div>
-
-                ) : error ? (
-
-                    <div className="error-card">
-
-                        <h2>
-                            Unable to load news
-                        </h2>
-
-                        <p>
-                            {error}
-                        </p>
-
-                        <button
-                            className="analyze-button"
-                            onClick={() =>
-                                window.location.reload()
-                            }
-                        >
-                            Try again
-                        </button>
-
-                    </div>
-
-                ) : (
-
-                    <>
-
-                        <section className="home-hero">
-
-                            <div>
-
-                                <div className="hero-eyebrow">
-                                    NEWS INTELLIGENCE
-                                </div>
-
-                                <h1>
-                                    Understand the story,
-                                    <br />
-                                    not just the headline.
-                                </h1>
-
-                                <p>
-                                    X-NEWS compares reporting
-                                    across sources and uses AI
-                                    to surface bias, disagreement
-                                    and misinformation risk.
-                                </p>
-
-                            </div>
-
-                        </section>
-
-
-                        <section className="news-section">
-
-                            <div className="news-section-header">
-
-                                <div>
-
-                                    <span className="section-eyebrow">
-                                        LIVE FEED
-                                    </span>
-
-                                    <h2>
-                                        Latest stories
-                                    </h2>
-
-                                </div>
-
-                                <span className="section-count">
-                                    {events.length}{" "}
-                                    {events.length === 1
-                                        ? "story"
-                                        : "stories"}
-                                </span>
-
-                            </div>
-
-
-                            {events.length === 0 ? (
-
-                                <div className="empty-state">
-
-                                    <h3>
-                                        No stories yet
-                                    </h3>
-
-                                    <p>
-                                        New stories will appear
-                                        here as they are collected.
-                                    </p>
-
-                                </div>
-
-                            ) : (
-
-                                <div className="event-list">
-
-                                    {events.map(
-                                        (event) => (
-
-                                            <EventCard
-                                                key={event.id}
-                                                event={event}
-                                                onClick={() =>
-                                                    setSelectedEventId(
-                                                        event.id
-                                                    )
-                                                }
-                                            />
-
-                                        )
-                                    )}
-
-                                </div>
-
-                            )}
-
-                        </section>
-
-                    </>
-
-                )}
-
-            </main>
-
-        </div>
+        </Routes>
     );
 }
 

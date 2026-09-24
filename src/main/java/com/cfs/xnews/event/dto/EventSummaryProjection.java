@@ -15,4 +15,10 @@ public interface EventSummaryProjection {
     LocalDateTime getCreatedAt();
 
     Long getSourceCount();
+
+    String getVerificationStatus();
+
+    String getDisagreementLevel();
+
+    Double getMisinformationRisk();
 }
