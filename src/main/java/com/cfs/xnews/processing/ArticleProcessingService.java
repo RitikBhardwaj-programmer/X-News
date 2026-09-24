@@ -59,7 +59,7 @@ public class ArticleProcessingService {
             EventMatchingClient eventMatchingClient,
             CentroidUpdateStrategy centroidUpdateStrategy,
 
-            @Value("${ai.event-matcher.threshold:0.70}")
+            @Value("${ai.event-matcher.threshold:0.94}")
             double eventMatchThreshold,
 
             @Value("${ai.event-matcher.candidate-limit:30}")
@@ -339,7 +339,7 @@ public class ArticleProcessingService {
                 newsEvent.getId(),
                 candidates.size(),
                 bestProbability,
-                probabilityBucket(bestProbability),
+                probabilityBucket(bestProbability, eventMatchThreshold),
                 embedMs,
                 retrievalMs,
                 predictMs
@@ -372,31 +372,32 @@ public class ArticleProcessingService {
         return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
-    // Shows whether the match threshold is behaving: a cliff right at the
-    // threshold with nothing in the top buckets is the warning sign.
-    static String probabilityBucket(double probability) {
+    // Buckets sit relative to the threshold, so they keep showing whether it
+    // is behaving (a pile-up just below or above it is the warning sign)
+    // however the model's score scale or the threshold changes.
+    static String probabilityBucket(double probability, double threshold) {
 
         if (probability < 0) {
             return "none";
         }
 
-        if (probability < 0.5) {
-            return "0.0-0.5";
+        if (probability < threshold - 0.20) {
+            return "far-below";
         }
 
-        if (probability < 0.7) {
-            return "0.5-0.7";
+        if (probability < threshold - 0.05) {
+            return "below";
         }
 
-        if (probability < 0.8) {
-            return "0.7-0.8";
+        if (probability < threshold) {
+            return "just-below";
         }
 
-        if (probability < 0.9) {
-            return "0.8-0.9";
+        if (probability < threshold + 0.05) {
+            return "just-above";
         }
 
-        return "0.9-1.0";
+        return "well-above";
     }
 
     // =========================================================
