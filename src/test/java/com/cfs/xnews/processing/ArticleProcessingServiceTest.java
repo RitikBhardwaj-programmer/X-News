@@ -31,14 +31,16 @@ class ArticleProcessingServiceTest {
     }
 
     @Test
-    void probabilityBucketsMatchThePlannedDistribution() {
+    void probabilityBucketsSitRelativeToTheThreshold() {
 
-        assertThat(ArticleProcessingService.probabilityBucket(-1.0)).isEqualTo("none");
-        assertThat(ArticleProcessingService.probabilityBucket(0.49)).isEqualTo("0.0-0.5");
-        assertThat(ArticleProcessingService.probabilityBucket(0.5)).isEqualTo("0.5-0.7");
-        assertThat(ArticleProcessingService.probabilityBucket(0.7)).isEqualTo("0.7-0.8");
-        assertThat(ArticleProcessingService.probabilityBucket(0.85)).isEqualTo("0.8-0.9");
-        assertThat(ArticleProcessingService.probabilityBucket(0.95)).isEqualTo("0.9-1.0");
+        double threshold = 0.94;
+
+        assertThat(ArticleProcessingService.probabilityBucket(-1.0, threshold)).isEqualTo("none");
+        assertThat(ArticleProcessingService.probabilityBucket(0.10, threshold)).isEqualTo("far-below");
+        assertThat(ArticleProcessingService.probabilityBucket(0.80, threshold)).isEqualTo("below");
+        assertThat(ArticleProcessingService.probabilityBucket(0.93, threshold)).isEqualTo("just-below");
+        assertThat(ArticleProcessingService.probabilityBucket(0.94, threshold)).isEqualTo("just-above");
+        assertThat(ArticleProcessingService.probabilityBucket(0.995, threshold)).isEqualTo("well-above");
     }
 
     @Test
