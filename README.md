@@ -683,7 +683,8 @@ for backend configuration rather than hard-coding the API URL.
 Routing uses real paths (for example `/events/42`), so a production static
 host must serve `index.html` for unknown paths (an SPA fallback). Otherwise a
 refresh or a shared link returns 404. `vite dev` and `vite preview` already do
-this.
+this, and on Azure Static Web Apps it is configured by
+`frontend/public/staticwebapp.config.json`.
 
 ------------------------------------------------------------------------
 
