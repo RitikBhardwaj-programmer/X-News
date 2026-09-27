@@ -1,0 +1,111 @@
+name: Deploy backend
+
+# Tests run first; everything that touches Azure happens in the "production"
+# environment, which waits for approval. Azure trusts only that environment
+# (OIDC federated credential), so no Azure password is stored in GitHub.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "pom.xml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".mvn/**"
+      - "mvnw"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and push the image only; do not update the running app"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+env:
+  REGISTRY: xnewsbackendacr.azurecr.io
+  IMAGE: xnewsbackendacr.azurecr.io/xnews-backend
+  APP: xnews-backend
+  RESOURCE_GROUP: xnews-rg
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Unit tests
+        run: ./mvnw -B test -Dtest='!XNewsApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image tag
+        id: tag
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to the registry
+        run: az acr login --name "${REGISTRY%%.*}"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update the container app
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: |
+          az containerapp update --name "$APP" --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE:${{ steps.tag.outputs.tag }}" --output none
+
+      - name: Check the new revision is live
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: |
+          expected="$IMAGE:${{ steps.tag.outputs.tag }}"
+          fqdn=$(az containerapp show -n "$APP" -g "$RESOURCE_GROUP" --query properties.configuration.ingress.fqdn -o tsv)
+          for i in $(seq 1 36); do
+            image=$(az containerapp show -n "$APP" -g "$RESOURCE_GROUP" --query "properties.template.containers[0].image" -o tsv)
+            # Spring Security answers an unauthenticated request with its own 403;
+            # the Azure gateway returns 404/502/503 while the app is not up.
+            status=$(curl -s -o /dev/null -w "%{http_code}" "https://$fqdn/api/v1/events" || true)
+            echo "attempt $i: image=$image http=$status"
+            if [ "$image" = "$expected" ] && [ "$status" = "403" ]; then
+              echo "Backend is live on $expected"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Backend did not come up on $expected within 6 minutes"
+          exit 1
