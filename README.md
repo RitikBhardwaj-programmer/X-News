@@ -1491,6 +1491,14 @@ agreement.
 
 ------------------------------------------------------------------------
 
+## 3. Keyword category fallback
+
+Without a Jev API key, categories come from keyword rules that match
+substrings, so "ai" also matches "said", "against" or "rain" and many
+articles are labelled AI. V4 switches the rules to whole-word matching.
+
+------------------------------------------------------------------------
+
 ## 3. Limited learned feature set
 
 The final model intentionally uses only:
@@ -1547,6 +1555,8 @@ Future work includes:
 -   Gemini auto-titles for events with two or more articles
 -   Persisted match confidence, shown as honest labels
 -   Count distinct outlets per event and detect near-identical wire copy
+-   Whole-word keyword category rules (the substring fallback mislabels
+    many articles as AI)
 -   Re-queue articles left unprocessed (Kafka outage resilience)
 -   Integration tests with a throwaway Postgres (Testcontainers)
 
