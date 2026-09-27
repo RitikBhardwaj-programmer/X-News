@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.cfs</groupId>
@@ -79,20 +79,20 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.12.6</version>
+            <version>0.13.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.12.6</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.6</version>
+            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -129,7 +129,7 @@
         <dependency>
             <groupId>com.google.genai</groupId>
             <artifactId>google-genai</artifactId>
-            <version>1.0.0</version>
+            <version>1.73.0</version>
         </dependency>
         <!-- Hibernate Vector / pgvector -->
         <dependency>
