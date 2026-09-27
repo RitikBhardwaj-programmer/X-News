@@ -1491,7 +1491,17 @@ agreement.
 
 ------------------------------------------------------------------------
 
-## 3. Keyword category fallback
+## 3. Kafka publish before commit
+
+The collector publishes each Kafka message inside its database
+transaction, so the consumer can receive a message before the article is
+committed and give up ("Article not found"). About 1.4% of live articles
+(11 of 778 on 27 September 2026) stayed unprocessed. V4 publishes after
+commit, adds a consumer back-off and re-queues stuck articles.
+
+------------------------------------------------------------------------
+
+## 4. Keyword category fallback
 
 Without a Jev API key, categories come from keyword rules that match
 substrings, so "ai" also matches "said", "against" or "rain" and many
@@ -1549,6 +1559,8 @@ Future work includes:
 
 ## V4 (next)
 
+-   Publish Kafka messages after the database commit, add a consumer
+    back-off, and re-queue articles left unprocessed
 -   Stop events over-merging: new articles must also be similar to every
     existing event member (validated offline first)
 -   Event statistics in the UI (member count, activity, open/closed)
@@ -1557,7 +1569,6 @@ Future work includes:
 -   Count distinct outlets per event and detect near-identical wire copy
 -   Whole-word keyword category rules (the substring fallback mislabels
     many articles as AI)
--   Re-queue articles left unprocessed (Kafka outage resilience)
 -   Integration tests with a throwaway Postgres (Testcontainers)
 
 ## Longer term: evidence-grounded intelligence
