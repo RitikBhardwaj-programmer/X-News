@@ -185,6 +185,10 @@ X-NEWS V3 (live since 27 September 2026) adds:
     `master`, Dependabot, and approval-gated deploys to Azure with OIDC
     (no stored Azure passwords)
 -   **Service-to-service API key** between the backend and the AI service
+-   **No lost articles**: Kafka messages are sent only after the database
+    commit, the consumer retries 3 times 2 s apart, and a job re-queues
+    articles left unprocessed for over 10 minutes (fixes a race that
+    skipped about 1.4% of articles on go-live day)
 
 ------------------------------------------------------------------------
 
@@ -321,7 +325,9 @@ The generated ID is then included in the Kafka event.
 
 ## 3. Kafka publication
 
-The backend publishes an `ArticleEvent` to:
+After the article is committed to the database (never before, so the
+consumer cannot read an article that does not exist yet), the backend
+publishes an `ArticleEvent` to:
 
 ``` text
 xnews.articles
@@ -1491,17 +1497,7 @@ agreement.
 
 ------------------------------------------------------------------------
 
-## 3. Kafka publish before commit
-
-The collector publishes each Kafka message inside its database
-transaction, so the consumer can receive a message before the article is
-committed and give up ("Article not found"). About 1.4% of live articles
-(11 of 778 on 27 September 2026) stayed unprocessed. V4 publishes after
-commit, adds a consumer back-off and re-queues stuck articles.
-
-------------------------------------------------------------------------
-
-## 4. Keyword category fallback
+## 3. Keyword category fallback
 
 Without a Jev API key, categories come from keyword rules that match
 substrings, so "ai" also matches "said", "against" or "rain" and many
@@ -1509,7 +1505,7 @@ articles are labelled AI. V4 switches the rules to whole-word matching.
 
 ------------------------------------------------------------------------
 
-## 3. Limited learned feature set
+## 4. Limited learned feature set
 
 The final model intentionally uses only:
 
@@ -1526,7 +1522,7 @@ evaluation.
 
 ------------------------------------------------------------------------
 
-## 4. AI analysis is not evidence verification
+## 5. AI analysis is not evidence verification
 
 Gemini-generated analysis is not equivalent to verified truth.
 
@@ -1541,7 +1537,7 @@ This is why evidence-grounded analysis stays on the roadmap.
 
 ------------------------------------------------------------------------
 
-## 5. Kafka production hardening
+## 6. Kafka production hardening
 
 Future work includes:
 
@@ -1559,8 +1555,6 @@ Future work includes:
 
 ## V4 (next)
 
--   Publish Kafka messages after the database commit, add a consumer
-    back-off, and re-queue articles left unprocessed
 -   Stop events over-merging: new articles must also be similar to every
     existing event member (validated offline first)
 -   Event statistics in the UI (member count, activity, open/closed)
