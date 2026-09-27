@@ -2,6 +2,5 @@ target/
 .git/
 .idea/
 *.iml
-.env
-application.properties
+**/.env*
 README.md

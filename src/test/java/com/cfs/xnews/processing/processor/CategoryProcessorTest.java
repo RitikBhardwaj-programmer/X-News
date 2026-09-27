@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +45,7 @@ class CategoryProcessorTest {
                 null
         );
 
+        when(jevClient.isConfigured()).thenReturn(true);
         when(jevClient.evaluate(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new JevResponse("jev-1.0", Map.of("category", answer), null));
 
@@ -62,6 +65,7 @@ class CategoryProcessorTest {
                 null
         );
 
+        when(jevClient.isConfigured()).thenReturn(true);
         when(jevClient.evaluate(org.mockito.ArgumentMatchers.any()))
                 .thenThrow(new RuntimeException("service unavailable"));
 
@@ -81,9 +85,29 @@ class CategoryProcessorTest {
                 null
         );
 
+        when(jevClient.isConfigured()).thenReturn(true);
         when(jevClient.evaluate(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new JevResponse("jev-1.0", Map.of(), null));
 
         assertThat(categoryProcessor.classify(article)).isEqualTo("SPORTS");
+    }
+
+    @Test
+    void classify_skipsJevAndUsesKeywordsWhenNoApiKeyConfigured() {
+
+        CategoryProcessor categoryProcessor = new CategoryProcessor(jevClient);
+
+        Article article = new Article(
+                "OpenAI releases new model",
+                "A story about artificial intelligence",
+                "http://example.com/d",
+                "example",
+                null
+        );
+
+        when(jevClient.isConfigured()).thenReturn(false);
+
+        assertThat(categoryProcessor.classify(article)).isEqualTo("AI");
+        verify(jevClient, never()).evaluate(org.mockito.ArgumentMatchers.any());
     }
 }

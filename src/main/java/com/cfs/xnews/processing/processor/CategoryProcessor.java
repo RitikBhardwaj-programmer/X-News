@@ -36,6 +36,10 @@ public class CategoryProcessor {
 
     public String classify(Article article) {
 
+        if (!jevClient.isConfigured()) {
+            return classifyByKeyword(article);
+        }
+
         try {
 
             return classifyWithJev(article);
