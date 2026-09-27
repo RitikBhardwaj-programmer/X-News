@@ -958,25 +958,33 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 ## 2. Configure Spring Boot
 
-Configure the required application properties/environment variables for:
+`src/main/resources/application.properties` is committed and contains no
+secrets. Every secret is read from an environment variable:
 
 ``` text
-DATABASE_URL
+DATABASE_URL                 jdbc:postgresql://<host>/<db>?sslmode=require
 DATABASE_USERNAME
 DATABASE_PASSWORD
 
-KAFKA_BOOTSTRAP_SERVERS
-KAFKA_API_KEY
+JWT_SECRET
+
+KAFKA_BOOTSTRAP_SERVER
+KAFKA_API_KEY                Confluent API key (used as the SASL username)
 KAFKA_API_SECRET
 
-AI_SERVICE_URL
-
 GEMINI_API_KEY
+AI_SERVICE_API_KEY           shared with the AI service
+
+# optional
+AI_EVENT_MATCHER_URL         default http://localhost:8000
+AI_EVENT_MATCHER_THRESHOLD   default 0.94
+AI_EVENT_MATCHER_CANDIDATE_LIMIT  default 30
+JEV_API_KEY                  without it, categories use keyword rules
 ```
 
-Use your project's actual property names if they differ.
-
-Never commit secrets to GitHub.
+In production these are Azure Container Apps secrets. Never commit secrets
+to GitHub; secret scanning with push protection blocks pushes that contain
+them.
 
 ------------------------------------------------------------------------
 
@@ -1086,17 +1094,19 @@ A typical local configuration requires values equivalent to:
 
 ``` env
 # Spring Boot
-DATABASE_URL=...
+DATABASE_URL=jdbc:postgresql://localhost:15432/xnews
 DATABASE_USERNAME=...
 DATABASE_PASSWORD=...
+JWT_SECRET=...
 
 # Kafka
-KAFKA_BOOTSTRAP_SERVERS=...
+KAFKA_BOOTSTRAP_SERVER=...
 KAFKA_API_KEY=...
 KAFKA_API_SECRET=...
 
-# AI service
-AI_SERVICE_URL=http://localhost:8000
+# AI service (same key on both sides)
+AI_SERVICE_API_KEY=...
+AI_EVENT_MATCHER_URL=http://localhost:8000
 
 # Gemini
 GEMINI_API_KEY=...
@@ -1105,8 +1115,8 @@ GEMINI_API_KEY=...
 VITE_API_URL=http://localhost:8080/api/v1
 ```
 
-The exact environment/property names must match the application's
-configuration.
+The full list, including optional variables, is in "Configure Spring Boot"
+above.
 
 ### Never commit:
 
