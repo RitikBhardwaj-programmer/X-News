@@ -12,11 +12,14 @@ using Spring Boot, Kafka, PostgreSQL, pgvector, a Python/FastAPI AI
 microservice, sentence embeddings, a learned event-matching model,
 Gemini-based analysis, and a React frontend.
 
-> **Current release: X-NEWS V2.0**
+> **Current release: X-NEWS V3**
 >
-> V2 introduces semantic event matching, vector retrieval, AI-assisted
-> event intelligence, and frontend-integrated
-> authentication/authorization.
+> V3 matches articles against event centroids with an HNSW index and one
+> batched prediction call, closes stale events automatically, manages the
+> schema with Flyway, ships a redesigned frontend (real URLs, dark mode),
+> and runs on a tested, approval-gated CI/CD pipeline with secret-free
+> configuration. V2 introduced semantic event matching, vector
+> retrieval, AI-assisted event intelligence and authentication.
 
 ------------------------------------------------------------------------
 
@@ -24,6 +27,7 @@ Gemini-based analysis, and a React frontend.
 
 -   [What Problem Does X-NEWS Solve?](#what-problem-does-x-news-solve)
 -   [What Makes X-NEWS Different?](#what-makes-x-news-different)
+-   [V3 Highlights](#v3-highlights)
 -   [V2 Highlights](#v2-highlights)
 -   [Architecture](#architecture)
 -   [End-to-End Data Flow](#end-to-end-data-flow)
@@ -43,9 +47,9 @@ Gemini-based analysis, and a React frontend.
 -   [API Overview](#api-overview)
 -   [Semantic Experiment](#semantic-experiment)
 -   [Model Evaluation](#model-evaluation)
--   [V1 vs V2](#v1-vs-v2)
+-   [V1 vs V2 vs V3](#v1-vs-v2-vs-v3)
 -   [Known Limitations](#known-limitations)
--   [V3 Roadmap](#v3-roadmap)
+-   [Roadmap: V4 and Beyond](#roadmap-v4-and-beyond)
 -   [Engineering Lessons](#engineering-lessons)
 -   [License](#license)
 
@@ -149,6 +153,38 @@ The system combines:
 -   generative AI
 
 Each technology is used for the problem it is best suited to solve.
+
+------------------------------------------------------------------------
+
+# V3 Highlights
+
+X-NEWS V3 (live since 27 September 2026) adds:
+
+-   **Event centroids**: each event keeps a normalized running-mean
+    embedding; new articles are compared with events, not single
+    articles
+-   **HNSW vector index** on event centroids for fast candidate retrieval
+    (top 30 open events)
+-   **One batched `/predict` call** per article instead of one call per
+    candidate
+-   **Event lifecycle**: an hourly job closes events inactive for 10 days
+-   **Retrained matcher**: two-feature logistic regression trained on
+    article-vs-centroid rows; threshold 0.94 (cross-validated precision
+    0.75, recall 0.89, F1 0.81 on the labeled set)
+-   **Flyway migrations** V1–V4 own the schema (`ddl-auto=validate`)
+-   **Observability as logs**: decision, candidates, best probability and
+    timings for every article
+-   **Frontend**: React Router URLs (`/events/:id`), light/dark theme,
+    real verification/risk/date on cards, keyboard access, loading
+    skeletons, AI-estimate disclaimer
+-   **Gemini resilience**: retries on 429/5xx, clear 503 when busy
+-   **Secret-free configuration**: every secret comes from environment
+    variables (Azure Container Apps secrets in production); secret
+    scanning and push protection on
+-   **CI/CD**: GitHub Actions CI on every pull request, protected
+    `master`, Dependabot, and approval-gated deploys to Azure with OIDC
+    (no stored Azure passwords)
+-   **Service-to-service API key** between the backend and the AI service
 
 ------------------------------------------------------------------------
 
@@ -849,7 +885,7 @@ React
 ```
 
 The Gemini layer should not be considered a fact-verification oracle.
-Evidence-grounded analysis and RAG are intentionally reserved for V3.
+Evidence-grounded analysis and RAG are intentionally reserved for a later version (see the roadmap).
 
 ------------------------------------------------------------------------
 
@@ -1363,7 +1399,7 @@ semantic-experiment directory.
 
 ------------------------------------------------------------------------
 
-# V1 vs V2
+# V1 vs V2 vs V3
 
 ## V1
 
@@ -1409,29 +1445,49 @@ synchronized.
 
 ------------------------------------------------------------------------
 
-# Known Limitations
+## V3
 
-V2 is intentionally not the final version.
+V3 makes event matching scale and makes the platform operable:
 
-## 1. Representative article
+``` text
+Event centroids + HNSW retrieval
+       ↓
+Batched /predict + retrained matcher (0.94)
+       ↓
+Event lifecycle (auto-close after 10 days)
+       ↓
+Flyway-managed schema
+       ↓
+Redesigned frontend (routing, dark mode)
+       ↓
+CI/CD, protected master, OIDC deploys
+```
 
-Event matching currently uses a representative article from the
-candidate event.
-
-Future versions can use:
-
--   event centroid embeddings
--   multiple representative articles
--   event-level embeddings
+V3 went live on 27 September 2026 on a fresh Neon database.
 
 ------------------------------------------------------------------------
 
-## 2. Article-level vector retrieval
+# Known Limitations
 
-The current vector search retrieves article candidates and then maps
-them to events.
+V3 is intentionally not the final version.
 
-A future architecture can retrieve event-level vectors directly.
+## 1. Over-merging of related stories
+
+Articles are compared with each event's running-mean centroid. The 0.94
+threshold corresponds to a cosine similarity of about 0.59 on the same
+day, and the centroid drifts toward the general topic, so popular
+subjects (a star player, a tournament) and template headlines ("LIVE
+score", "where to watch") can pull different stories into one event.
+V4 adds a check that a new article must also be similar to every
+existing member of the event.
+
+------------------------------------------------------------------------
+
+## 2. Source counting
+
+An event's source count is the number of its articles, not of distinct
+outlets, and republished wire copy (PTI/ANI) looks like independent
+agreement.
 
 ------------------------------------------------------------------------
 
@@ -1463,7 +1519,7 @@ Without evidence retrieval, the model can still:
 -   overgeneralize
 -   confidently state unsupported claims
 
-This is why evidence-grounded analysis is a V3 priority.
+This is why evidence-grounded analysis stays on the roadmap.
 
 ------------------------------------------------------------------------
 
@@ -1481,7 +1537,20 @@ Future work includes:
 
 ------------------------------------------------------------------------
 
-# V3 Roadmap
+# Roadmap: V4 and Beyond
+
+## V4 (next)
+
+-   Stop events over-merging: new articles must also be similar to every
+    existing event member (validated offline first)
+-   Event statistics in the UI (member count, activity, open/closed)
+-   Gemini auto-titles for events with two or more articles
+-   Persisted match confidence, shown as honest labels
+-   Count distinct outlets per event and detect near-identical wire copy
+-   Re-queue articles left unprocessed (Kafka outage resilience)
+-   Integration tests with a throwaway Postgres (Testcontainers)
+
+## Longer term: evidence-grounded intelligence
 
 The next major evolution is from:
 
@@ -1517,7 +1586,7 @@ Grounded AI analysis
 
 ------------------------------------------------------------------------
 
-## Proposed V3 Architecture
+## Proposed Evidence-Grounded Architecture
 
 ``` text
                     News Sources
@@ -1711,33 +1780,33 @@ React
 ```
 
 This makes each component replaceable and gives the system a strong
-foundation for V3.
+foundation for later versions.
 
 ------------------------------------------------------------------------
 
 # Current Release
 
-## X-NEWS V2.0
+## X-NEWS V3
 
-Status:
+Status (live since 27 September 2026):
 
 ``` text
-Backend                  ✅
-Frontend                 ✅
-Authentication           ✅
-Authorization foundation ✅
-Kafka processing         ✅
-Embeddings               ✅
-pgvector                 ✅
-Semantic event matching  ✅
-AI microservice          ✅
-Gemini analysis          ✅
-Local end-to-end flow    ✅
-V2 merged into master    ✅
+Event centroids + HNSW retrieval   ✅
+Batched /predict                   ✅
+Retrained matcher (0.94)           ✅
+Event lifecycle job                ✅
+Flyway migrations V1–V4            ✅
+Frontend routing + dark mode       ✅
+Gemini retry / 503 handling        ✅
+Secret-free configuration          ✅
+CI + protected master + Dependabot ✅
+Approval-gated OIDC deploys        ✅
+Deployed to Azure                  ✅
 ```
 
-V3 capabilities such as RAG, evidence grounding, claim verification,
-conflict detection and timelines remain future work.
+Over-merging of related stories is a known V3 limitation, fixed in V4.
+RAG, evidence grounding, claim verification, conflict detection and
+timelines remain future work.
 
 ------------------------------------------------------------------------
 
