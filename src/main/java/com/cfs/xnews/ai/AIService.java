@@ -6,7 +6,7 @@ public interface AIService {
 
     // Bump when the analysis prompt changes, so summaries made with
     // different prompts can be told apart (provenance, roadmap step 1).
-    String PROMPT_VERSION = "event-analysis-2026-10-02";
+    String PROMPT_VERSION = "event-analysis-cited-2026-10-02";
 
     EventAIAnalysis analyzeEvent(NewsEvent event);
 

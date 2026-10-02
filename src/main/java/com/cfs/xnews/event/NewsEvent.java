@@ -3,6 +3,7 @@ package com.cfs.xnews.event;
 import com.cfs.xnews.analysis.FactCheck;
 import com.cfs.xnews.news.articles.Article;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Array;
@@ -122,6 +123,13 @@ public class NewsEvent {
     @Column(name = "summary_run_id")
     private Long summaryRunId;
 
+    // Cited analysis (agreed facts + per-outlet framing, each citing article
+    // ids); returned to clients as JSON, not as an escaped string.
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @JsonRawValue
+    private String analysis;
+
     public Long getId() {
         return id;
     }
@@ -168,6 +176,14 @@ public class NewsEvent {
 
     public void setSummaryRunId(Long summaryRunId) {
         this.summaryRunId = summaryRunId;
+    }
+
+    public String getAnalysis() {
+        return analysis;
+    }
+
+    public void setAnalysis(String analysis) {
+        this.analysis = analysis;
     }
 
     public void setTitle(String title) {

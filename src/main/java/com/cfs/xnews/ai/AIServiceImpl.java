@@ -50,37 +50,38 @@ public class AIServiceImpl implements AIService {
         String prompt = """
                 You are a neutral news analysis system.
 
-                Analyze multiple articles covering the SAME news event.
+                The articles below cover the SAME news event. Each has an ID.
 
-                Return ONLY valid JSON.
-                Do not use markdown.
+                Return ONLY valid JSON. Do not use markdown.
                 Do not wrap the JSON in ```.
 
                 Required format:
 
                 {
-                  "summary": "3-4 sentence neutral summary",
-                  "biasAnalysis": "cross-source framing and bias analysis",
+                  "agreedFacts": [
+                    {"text": "One factual sentence the sources agree on.", "articles": [101, 102]}
+                  ],
+                  "framing": [
+                    {"outlet": "Outlet name", "text": "One sentence on how this outlet frames the story.", "articles": [101]}
+                  ],
                   "disagreementLevel": "LOW"
                 }
 
-                disagreementLevel must be exactly:
-                LOW, MEDIUM, or HIGH.
-
-                LOW:
-                Sources substantially agree.
-
-                MEDIUM:
-                Sources have meaningful differences in framing or claims.
-
-                HIGH:
-                Sources make major conflicting claims about the event.
-
-                IMPORTANT:
-                Do not claim that something is false merely because
-                sources disagree.
-
-                Do not treat this AI analysis as factual verification.
+                Rules:
+                - Every sentence must cite, in "articles", the IDs of the
+                  articles that state it. A sentence without a supporting
+                  article ID must be left out.
+                - Use only what the articles say. No outside knowledge.
+                - agreedFacts: 2 to 5 short sentences that the cited
+                  articles agree on. If sources conflict on a point, it is
+                  not an agreed fact.
+                - framing: at most one sentence per outlet, describing its
+                  emphasis or angle, citing only that outlet's articles.
+                - disagreementLevel is exactly LOW (sources substantially
+                  agree), MEDIUM (meaningful differences in framing or
+                  claims) or HIGH (major conflicting claims).
+                - Do not claim something is false because sources disagree.
+                  This is not fact verification.
 
                 EVENT:
                 %s
@@ -179,6 +180,10 @@ public class AIServiceImpl implements AIService {
         event.getArticles().forEach(article -> {
 
             builder.append("\n--- ARTICLE ---\n");
+
+            builder.append("ID: ")
+                    .append(article.getId())
+                    .append("\n");
 
             builder.append("SOURCE: ")
                     .append(article.getSource())

@@ -19,10 +19,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AIServiceImplTest {
 
     private static final String VALID_JSON = """
-            {"summary":"s","biasAnalysis":"b","disagreementLevel":"LOW"}
+            {"agreedFacts":[{"text":"Rain closed schools.","articles":[1,2]}],
+             "framing":[{"outlet":"The Hindu","text":"Focuses on relief.","articles":[1]}],
+             "disagreementLevel":"LOW"}
             """;
 
-    // A reply in the old format, which still had a risk score.
+    // A reply in an older format (summary text, risk score): it parses, but
+    // has no cited facts, so validation rejects it later.
     private static final String OLD_FORMAT_JSON = """
             {"summary":"s","biasAnalysis":"b","disagreementLevel":"LOW","misinformationRisk":0.1}
             """;
@@ -74,14 +77,18 @@ class AIServiceImplTest {
 
         assertThat(service.calls).isEqualTo(3);
         assertThat(analysis.disagreementLevel()).isEqualTo("LOW");
+        assertThat(analysis.agreedFacts()).singleElement()
+                .satisfies(fact -> assertThat(fact.articles()).containsExactly(1L, 2L));
+        assertThat(analysis.framing()).singleElement()
+                .satisfies(framing -> assertThat(framing.outlet()).isEqualTo("The Hindu"));
     }
 
     @Test
-    void analyzeEvent_ignoresARiskScoreInAnOldFormatReply() {
+    void analyzeEvent_parsesAnOldFormatReplyWithoutFacts() {
 
         EventAIAnalysis analysis = new ScriptedAIService(OLD_FORMAT_JSON).analyzeEvent(event());
 
-        assertThat(analysis.summary()).isEqualTo("s");
+        assertThat(analysis.agreedFacts()).isNull();
         assertThat(analysis.disagreementLevel()).isEqualTo("LOW");
     }
 

@@ -153,7 +153,7 @@ public class NewsEventService {
     }
 
     // Article sources are stored as "Outlet -> Section" (NewsSource.name).
-    static String outletOf(String source) {
+    public static String outletOf(String source) {
         if (source == null) {
             return "Unknown";
         }
