@@ -142,6 +142,22 @@ export async function getEvent(id) {
 }
 
 
+export async function getEventTimeline(id) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/events/${id}/timeline`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function getEventEntities(id) {
 
     const response =

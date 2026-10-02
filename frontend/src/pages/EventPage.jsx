@@ -8,6 +8,7 @@ import {
     getEventCoverage,
     getEventMatches,
     getEventEntities,
+    getEventTimeline,
     analyzeEvent
 } from "../services/api";
 
@@ -91,6 +92,24 @@ function EventPage() {
     const entities =
         loadedEntities?.eventId === eventId
             ? loadedEntities.data
+            : [];
+
+
+    const [loadedTimeline, setLoadedTimeline] =
+        useState(null);
+
+    // Related coverage is extra context as well.
+    useEffect(() => {
+
+        getEventTimeline(eventId)
+            .then((data) => setLoadedTimeline({ eventId, data }))
+            .catch((error) => console.error(error));
+
+    }, [eventId]);
+
+    const timeline =
+        loadedTimeline?.eventId === eventId
+            ? loadedTimeline.data
             : [];
 
 
@@ -543,6 +562,66 @@ function EventPage() {
                     )}
 
                 </section>
+
+
+                {/* RELATED COVERAGE */}
+
+                {timeline.length > 1 && (
+
+                    <section className="content-section">
+
+                        <div className="section-heading">
+                            <div>
+                                <span className="section-eyebrow">
+                                    STORYLINE
+                                </span>
+
+                                <h2>
+                                    Related coverage
+                                </h2>
+                            </div>
+                        </div>
+
+                        <ol className="storyline">
+                            {timeline.map((entry) => (
+                                <li
+                                    key={entry.eventId}
+                                    className={entry.current ? "storyline-current" : undefined}
+                                >
+                                    <span className="storyline-date">
+                                        {formatRelativeTime(entry.firstActivity)}
+                                    </span>
+
+                                    {entry.current ? (
+                                        <span className="storyline-title">
+                                            {entry.title}
+                                            <span className="entity-count"> · this story</span>
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            to={`/events/${entry.eventId}`}
+                                            className="storyline-title"
+                                        >
+                                            {entry.title}
+                                        </Link>
+                                    )}
+
+                                    <span className="entity-count">
+                                        {entry.articleCount}{" "}
+                                        {entry.articleCount === 1 ? "article" : "articles"}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+
+                        <p className="match-note">
+                            Linked automatically: stories that share
+                            people, places or organisations and are
+                            close in meaning. Oldest first.
+                        </p>
+
+                    </section>
+                )}
 
 
                 {/* ENTITIES */}
