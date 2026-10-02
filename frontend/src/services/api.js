@@ -222,6 +222,63 @@ export async function getEventCoverage(id) {
 }
 
 
+export async function getEventClaims(id) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/events/${id}/claims`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
+// Admin only: claims waiting for (or after) review.
+export async function getClaimsForReview(status) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/admin/claims?status=${encodeURIComponent(status)}`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
+export async function reviewClaim(id, decision) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/admin/claims/${id}/review`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+                    ...authHeaders()
+                },
+
+                body: JSON.stringify({
+                    decision
+                })
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function analyzeEvent(id) {
 
     const response =

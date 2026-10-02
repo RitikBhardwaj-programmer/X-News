@@ -125,6 +125,12 @@ public class SecurityConfig {
                         // ADMIN ONLY
                         // =========================================
 
+                        // Review queue (claims and future moderation)
+                        .requestMatchers(
+                                "/api/v1/admin/**"
+                        ).hasRole("ADMIN")
+
+
                         // Create article
                         .requestMatchers(
                                 HttpMethod.POST,

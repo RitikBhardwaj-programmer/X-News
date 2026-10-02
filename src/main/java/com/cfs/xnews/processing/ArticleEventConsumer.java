@@ -1,5 +1,6 @@
 package com.cfs.xnews.processing;
 
+import com.cfs.xnews.claim.ClaimService;
 import com.cfs.xnews.entity.EntityService;
 import com.cfs.xnews.kafka.ArticleEvent;
 import org.slf4j.Logger;
@@ -14,13 +15,16 @@ public class ArticleEventConsumer {
 
     private final ArticleProcessingService processingService;
     private final EntityService entityService;
+    private final ClaimService claimService;
 
     public ArticleEventConsumer(
             ArticleProcessingService processingService,
-            EntityService entityService
+            EntityService entityService,
+            ClaimService claimService
     ) {
         this.processingService = processingService;
         this.entityService = entityService;
+        this.claimService = claimService;
     }
 
     @KafkaListener(
@@ -37,6 +41,13 @@ public class ArticleEventConsumer {
             entityService.recordMentions(event.articleId());
         } catch (RuntimeException e) {
             log.warn("Recording entities failed for article={}: {}", event.articleId(), e.getMessage());
+        }
+
+        // Claims likewise (cricket only; reviewed before display).
+        try {
+            claimService.recordClaims(event.articleId());
+        } catch (RuntimeException e) {
+            log.warn("Recording claims failed for article={}: {}", event.articleId(), e.getMessage());
         }
     }
 }

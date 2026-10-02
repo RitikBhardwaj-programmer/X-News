@@ -2,6 +2,7 @@ package com.cfs.xnews.event;
 
 import com.cfs.xnews.event.dto.EmbeddingRequest;
 import com.cfs.xnews.event.dto.ArticleText;
+import com.cfs.xnews.event.dto.ClaimExtractionResponse;
 import com.cfs.xnews.event.dto.EntityExtractionResponse;
 import com.cfs.xnews.event.dto.EmbeddingResponse;
 import com.cfs.xnews.event.dto.EventMatchRequest;
@@ -103,6 +104,19 @@ public class EventMatchingClient {
                 .body(article)
                 .retrieve()
                 .body(EntityExtractionResponse.class);
+    }
+
+    // Numeric claims in one article (5 s client, like entities).
+    public ClaimExtractionResponse extractClaims(
+            ArticleText article
+    ) {
+
+        return v2PredictClient
+                .post()
+                .uri("/claims")
+                .body(article)
+                .retrieve()
+                .body(ClaimExtractionResponse.class);
     }
 
     public EventMatchResponse predict(

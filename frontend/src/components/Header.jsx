@@ -81,6 +81,15 @@ function Header() {
                         />
                     </form>
 
+                    {user?.role === "ADMIN" && (
+                        <Link
+                            to="/review"
+                            className="logout-button"
+                        >
+                            Review
+                        </Link>
+                    )}
+
                     <span className="user-email">
                         {user?.email}
                     </span>
