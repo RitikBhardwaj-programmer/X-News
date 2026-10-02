@@ -228,6 +228,11 @@ function EventPage() {
             - (timelineById.get(b.id)?.position ?? Infinity)
     );
 
+    // Citation markers use the same numbers as the source list.
+    const articleNumberById = new Map(
+        orderedArticles.map((article, index) => [article.id, index + 1])
+    );
+
 
     return (
         <div className="app">
@@ -395,10 +400,11 @@ function EventPage() {
 
                             <p>
                                 X-NEWS will compare the
-                                available sources and
-                                generate a neutral summary,
-                                bias analysis and
-                                disagreement level.
+                                available sources: what they
+                                agree on and how each outlet
+                                frames the story, every point
+                                citing the articles it comes
+                                from.
                             </p>
 
                             <button
@@ -420,6 +426,65 @@ function EventPage() {
                             </button>
 
                         </div>
+
+                    ) : event.analysis ? (
+
+                        <>
+
+                            <div className="analysis-card">
+
+                                <div className="analysis-card-label">
+                                    WHAT THE SOURCES AGREE ON
+                                </div>
+
+                                <ul className="cited-list">
+                                    {event.analysis.agreedFacts.map((fact, index) => (
+                                        <li key={index}>
+                                            {fact.text}
+                                            <Citations
+                                                articles={fact.articles}
+                                                numberById={articleNumberById}
+                                            />
+                                        </li>
+                                    ))}
+                                </ul>
+
+                            </div>
+
+
+                            {event.analysis.framing.length > 0 && (
+
+                                <div className="analysis-card">
+
+                                    <div className="analysis-card-label">
+                                        HOW EACH OUTLET FRAMES IT
+                                    </div>
+
+                                    <ul className="cited-list">
+                                        {event.analysis.framing.map((framing) => (
+                                            <li key={framing.outlet}>
+                                                <strong>{framing.outlet}:</strong>{" "}
+                                                {framing.text}
+                                                <Citations
+                                                    articles={framing.articles}
+                                                    numberById={articleNumberById}
+                                                />
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                </div>
+
+                            )}
+
+                            <p className="match-note">
+                                Every point cites the articles below
+                                that state it; points without a source
+                                are left out. AI-written, not a
+                                fact-check.
+                            </p>
+
+                        </>
 
                     ) : (
 
@@ -515,6 +580,7 @@ function EventPage() {
 
                                 <article
                                     className="source-card"
+                                    id={`article-${article.id}`}
                                     key={article.id}
                                 >
 
@@ -721,6 +787,27 @@ function EventPage() {
             </main>
 
         </div>
+    );
+}
+
+
+// [1] [3]: links to the cited articles in the source list.
+function Citations({ articles, numberById }) {
+
+    return (
+        <span className="citations">
+            {articles
+                .filter((id) => numberById.has(id))
+                .map((id) => (
+                    <a
+                        key={id}
+                        href={`#article-${id}`}
+                        className="citation"
+                    >
+                        [{numberById.get(id)}]
+                    </a>
+                ))}
+        </span>
     );
 }
 
