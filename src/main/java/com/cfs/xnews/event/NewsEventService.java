@@ -2,6 +2,7 @@ package com.cfs.xnews.event;
 
 import com.cfs.xnews.analysis.FactCheckRepository;
 import com.cfs.xnews.event.dto.EventCoverageResponse;
+import com.cfs.xnews.event.dto.EventMatchConfidence;
 import com.cfs.xnews.event.dto.EventCoverageResponse.OutletCoverage;
 import com.cfs.xnews.event.dto.EventCoverageResponse.TimelineEntry;
 import com.cfs.xnews.event.dto.EventSummaryResponse;
@@ -27,15 +28,48 @@ public class NewsEventService {
     private final NewsEventRepository eventRepository;
     private final ArticleRepository articleRepository;
     private final FactCheckRepository factCheckRepository;
+    private final EventMatchDecisionRepository eventMatchDecisionRepository;
 
     public NewsEventService(
             NewsEventRepository eventRepository,
             ArticleRepository articleRepository,
-            FactCheckRepository factCheckRepository
+            FactCheckRepository factCheckRepository,
+            EventMatchDecisionRepository eventMatchDecisionRepository
     ) {
         this.eventRepository = eventRepository;
         this.articleRepository = articleRepository;
         this.factCheckRepository = factCheckRepository;
+        this.eventMatchDecisionRepository = eventMatchDecisionRepository;
+    }
+
+    // Empty when the event doesn't exist (404); an empty list when it exists
+    // but none of its articles has a recorded decision.
+    @Transactional(readOnly = true)
+    public Optional<List<EventMatchConfidence>> getMatchConfidence(Long id) {
+
+        if (!eventRepository.existsById(id)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                eventMatchDecisionRepository.findAppliedForEvent(id)
+                        .stream()
+                        .map(NewsEventService::toMatchConfidence)
+                        .toList()
+        );
+    }
+
+    static EventMatchConfidence toMatchConfidence(EventMatchDecision decision) {
+
+        return new EventMatchConfidence(
+                decision.getArticleId(),
+                decision.getChosenEventId() == null ? "started" : "joined",
+                decision.getMatcher(),
+                decision.getProbability(),
+                decision.getThreshold(),
+                decision.getModelVersion(),
+                decision.getCreatedAt()
+        );
     }
 
     public NewsEvent createEvent(Article article) {

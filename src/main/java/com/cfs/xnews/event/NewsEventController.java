@@ -1,6 +1,7 @@
 package com.cfs.xnews.event;
 
 import com.cfs.xnews.event.dto.EventCoverageResponse;
+import com.cfs.xnews.event.dto.EventMatchConfidence;
 import com.cfs.xnews.event.dto.EventSummaryResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,13 @@ public class NewsEventController {
     @GetMapping("/{id}")
     public ResponseEntity<NewsEvent> getEvent(@PathVariable Long id){
         return ResponseEntity.of(eventRepository.findById(id));
+    }
+
+    // Per-article match confidence: how each article came to be in the event.
+    @GetMapping("/{id}/matches")
+    public ResponseEntity<List<EventMatchConfidence>> getMatchConfidence(@PathVariable Long id) {
+
+        return ResponseEntity.of(newsEventService.getMatchConfidence(id));
     }
 
     @GetMapping("/{id}/coverage")

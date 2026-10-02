@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import {
     getEvent,
     getEventCoverage,
+    getEventMatches,
     analyzeEvent
 } from "../services/api";
 
@@ -53,6 +54,25 @@ function EventPage() {
         loadedCoverage?.eventId === eventId
             ? loadedCoverage.data
             : null;
+
+
+    const [loadedMatches, setLoadedMatches] =
+        useState(null);
+
+    // Match confidence is also extra context; articles from before
+    // decisions were recorded simply have none.
+    useEffect(() => {
+
+        getEventMatches(eventId)
+            .then((data) => setLoadedMatches({ eventId, data }))
+            .catch((error) => console.error(error));
+
+    }, [eventId]);
+
+    const matchesById = new Map(
+        (loadedMatches?.eventId === eventId ? loadedMatches.data : [])
+            .map((match) => [match.articleId, match])
+    );
 
 
     useEffect(() => {
@@ -468,6 +488,14 @@ function EventPage() {
                     </div>
 
 
+                    {matchesById.size > 0 && (
+                        <p className="match-note">
+                            Each article shows how it joined this
+                            event: the matcher's confidence, an
+                            estimate rather than a verdict.
+                        </p>
+                    )}
+
                     <div className="source-list">
 
                         {orderedArticles.map(
@@ -479,6 +507,9 @@ function EventPage() {
                                 const seen =
                                     entry?.publishedAt
                                     || entry?.observedAt;
+
+                                const match =
+                                    matchesById.get(article.id);
 
                                 return (
 
@@ -506,6 +537,15 @@ function EventPage() {
                                                         {formatRelativeTime(seen)}
                                                     </time>
                                                 </>
+                                            )}
+
+                                            {match && (
+                                                <span
+                                                    className="match-confidence"
+                                                    title={matchTitle(match)}
+                                                >
+                                                    {matchLabel(match)}
+                                                </span>
                                             )}
                                         </div>
 
@@ -682,6 +722,41 @@ function EventPage() {
 
         </div>
     );
+}
+
+
+// "joined · 97%" or "started this event". Probabilities are rounded to
+// whole percent and never shown as a flat 100%.
+function matchLabel(match) {
+
+    if (match.decision === "started") {
+        return "started this event";
+    }
+
+    return `joined · ${formatPercent(match.probability)}`;
+}
+
+function matchTitle(match) {
+
+    const estimate =
+        match.decision === "started"
+            ? `No existing event reached the ${match.matcher} matcher's threshold`
+                + ` (best ${formatPercent(match.probability)}, needed ${formatPercent(match.threshold)}).`
+            : `The ${match.matcher} matcher estimated ${formatPercent(match.probability)}`
+                + ` that this article belongs here (threshold ${formatPercent(match.threshold)}).`;
+
+    return `${estimate} A model estimate, not a fact-check.`;
+}
+
+function formatPercent(probability) {
+
+    if (probability === null || probability === undefined) {
+        return "n/a";
+    }
+
+    const percent = Math.round(probability * 100);
+
+    return percent >= 100 ? ">99%" : `${percent}%`;
 }
 
 export default EventPage;
