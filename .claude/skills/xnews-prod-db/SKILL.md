@@ -12,6 +12,12 @@ Credentials live only in Windows user variables `XNEWS_PROD_DATABASE_URL`, `XNEW
 - Never print credentials or full connection strings. Print hosts only.
 - Never select email/password columns in full; mask emails (`left(email,2) || '***@' || split_part(email,'@',2)`).
 - Schema changes go through Flyway migrations in a PR, not ad-hoc SQL.
+- Before every query, confirm the host from the env var matches the Azure `database-url` secret (compare hosts only):
+  `$az = az containerapp secret show -n xnews-backend -g xnews-rg --secret-name database-url --query value -o tsv`, take the host part the same way as below, `$az = $null`, and stop if they differ.
+
+## Roles
+- `users.role` is `USER` or `ADMIN` (a check constraint). `ADMIN` unlocks `/api/v1/admin/**` (the claim review page). The role is read at login, so the user signs out and in again after a change.
+- Granting it is a write: show the SQL with the user's account email, run it in a transaction that expects `UPDATE 1`, list admins with masked emails, then commit. Never change a role the user didn't ask for.
 
 ## Template (PowerShell)
 Write longer SQL to a file in the scratchpad and run it with `-f`.

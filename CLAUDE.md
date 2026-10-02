@@ -6,6 +6,8 @@
 - Changes reach `master` through pull requests with green CI; deploys wait for the user's approval.
 - Test from where the code actually runs (a feed that works from home can be blocked from Azure).
 - Windows shell pitfalls: `.claude/rules/windows-shell.md`.
+- Database migrations (numbering, merge order, dry runs): `.claude/rules/flyway-migrations.md`.
+- Unit tests aren't enough for processing, beans, migrations or AI calls; run the scratch-database check: `.claude/rules/verify-end-to-end.md`.
 - Project skills: `xnews-local-run`, `xnews-prod-db`, `xnews-deploy`, `xnews-azure-logs`, `xnews-release-doc`.
 
 ## graphify

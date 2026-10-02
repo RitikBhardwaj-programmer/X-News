@@ -17,6 +17,17 @@ description: Deploy the X-NEWS backend or AI service to Azure Container Apps thr
 3. Wait in the background: `until [ "$(gh run view <id> -R <repo> --json status --jq .status)" = completed ]; do sleep 20; done`.
 4. Report each step: `gh run view <id> -R <repo> --json jobs --jq '.jobs[] | select(.name=="deploy") | .steps[] | "\(.name): \(.conclusion)"'`.
 
+## Queued runs (learned 2026-10-02)
+- Both workflows use a concurrency group with `cancel-in-progress: false`. A run **waiting for approval blocks every later run**, and GitHub keeps only the newest queued one, silently dropping the ones in between.
+- When several merges queue up, the newest run usually contains all of them. Ask the user before cancelling anything; their usual choice has been to cancel the older waiting run (`gh run cancel <id> -R <repo>`) and approve only the newest, so there's one restart.
+- Never let an older run deploy known-bad code: if a waiting run contains something since fixed, say so and propose cancelling it.
+- After merges, list what is queued: `gh run list -R <repo> --workflow <file> --limit 4 --json databaseId,status,conclusion,headSha`.
+
+## Order between the two apps
+- When the backend starts calling a new AI-service endpoint, deploy the AI service first, or make sure the backend tolerates a 404 (it does for `/predict/v2`, `/entities` and `/claims`: the call is caught and logged).
+- Every AI-service restart drops its in-memory v2 vocabulary. With `AI_EVENT_MATCHER_MODE` at `shadow` or `v2`, the backend refits it automatically within a minute of the next article. Expect a "Vocabulary refit" log line; it doesn't count as a v2 error.
+- Migration numbers on `master` must be in merge order before deploying (`.claude/rules/flyway-migrations.md`).
+
 ## Dry run (build and push only)
 `gh workflow run deploy-backend.yml --ref master -f dry_run=true` (AI: `deploy.yml -R RitikBhardwaj-programmer/xnews-semantic-experiment`). Still needs approval.
 
@@ -26,6 +37,8 @@ az containerapp revision list -n xnews-backend -g xnews-rg --query "[?properties
 curl -s -o /dev/null -w "%{http_code}\n" https://xnews-backend.kindflower-bb4efb59.uaenorth.azurecontainerapps.io/api/v1/events   # expect 403 (Spring)
 curl -s https://xnews-ai.kindflower-bb4efb59.uaenorth.azurecontainerapps.io/health                                     # expect healthy
 ```
+- A new revision can take traffic weight 100 while its `healthState` is still `None`; the old revision keeps answering for 20–60 s while the model loads. Poll until the new behaviour is visible before concluding anything. For the AI service, its public endpoint list: `curl -s https://xnews-ai.kindflower-bb4efb59.uaenorth.azurecontainerapps.io/openapi.json` (paths include the new endpoint).
+- Backend startup lines (Flyway version, `Event matcher mode`, `Started XNewsApplication`) are easiest to read from Log Analytics filtered by `RevisionName_s` (`xnews-azure-logs` skill); `az containerapp logs show` often returns nothing for a fresh revision.
 
 ## Rollback
 Redeploy an earlier image tag: `gh workflow run deploy-backend.yml --ref <earlier-sha>` or, with approval, `az containerapp update -n xnews-backend -g xnews-rg --image xnewsbackendacr.azurecr.io/xnews-backend:sha-<7>`. List tags: `az acr repository show-tags -n xnewsbackendacr --repository xnews-backend -o tsv`.

@@ -37,7 +37,16 @@ cd "/c/Users/DELL/IdeaProjects/X News/frontend" && VITE_API_URL=http://localhost
 ```
 Port 5173 is in the backend CORS list. Open in the browser pane.
 
-## 5. Stop everything
+## 5. Scratch-database end-to-end run (before PRs that touch processing, beans, migrations or AI calls)
+Unit tests don't boot the application or apply migrations; this does (see `.claude/rules/verify-end-to-end.md` for why).
+1. Create a fresh scratch database in the local container (never the `xnews` database itself): `docker exec xnews-postgres psql -U postgres -d postgres -qc "CREATE DATABASE xnews_shadowN"`, then `CREATE EXTENSION IF NOT EXISTS vector` in it. Use a new N each time.
+2. Start the AI service (section 2). For an AI-service change, run it from that branch, e.g. a git worktree (`git worktree add ../xnews-semantic-<name> -b <branch> origin/master`) so a running experiment in the main checkout isn't disturbed.
+3. Copy `.claude/skills/xnews-local-run/LocalScratchRunTest.java.template` to `src/test/java/com/cfs/xnews/LocalScratchRunTest.java`, add the checks for the change, and run it with the section 3 environment plus `XNEWS_LOCAL_SCRATCH_RUN=true`, `GEMINI_API_KEY=local-dummy`, a throwaway `JWT_SECRET`, and `DATABASE_URL=jdbc:postgresql://localhost:15432/xnews_shadowN`: `./mvnw -o -q test -Dtest=LocalScratchRunTest -Dsurefire.failIfNoSpecifiedTests=false > "$SP/scratch-run.log" 2>&1`, then `grep SCRATCH-RUN`.
+4. **Delete the harness file afterwards; never commit it.** If a migration was renamed, delete `target/classes/db/migration/` first (stale copies get applied).
+5. For the UI, run the backend (section 3) against the scratch database and the frontend (section 4). Register a throwaway local user (`@example.test`, generated password kept in the scratchpad, never printed) and set its token in the browser's `localStorage` key `xnews_token`. For admin pages, set that user's role to `ADMIN` **in the scratch database only**.
+6. Tell the user which scratch databases were left behind; drop them only with their OK.
+
+## 6. Stop everything
 Stop the background tasks, then free port 8080 (Maven leaves the Java child running):
 ```powershell
 $c = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue; if ($c) { Stop-Process -Id $c[0].OwningProcess -Confirm:$false }
