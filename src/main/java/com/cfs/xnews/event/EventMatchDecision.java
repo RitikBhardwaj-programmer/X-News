@@ -50,6 +50,10 @@ public class EventMatchDecision {
     @Column(length = 500)
     private String error;
 
+    // Provenance: the matcher configuration that decided (extraction_runs.id).
+    @Column(name = "run_id")
+    private Long runId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -96,4 +100,6 @@ public class EventMatchDecision {
     public Integer getLatencyMs() { return latencyMs; }
     public String getError() { return error; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public Long getRunId() { return runId; }
+    public void setRunId(Long runId) { this.runId = runId; }
 }

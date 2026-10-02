@@ -4,6 +4,7 @@ import com.cfs.xnews.ai.AIService;
 import com.cfs.xnews.ai.EventAIAnalysis;
 import com.cfs.xnews.event.NewsEvent;
 import com.cfs.xnews.event.NewsEventRepository;
+import com.cfs.xnews.provenance.ExtractionRunService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,13 +14,16 @@ public class EventAnalysisService {
 
     private final NewsEventRepository eventRepository;
     private final AIService aiService;
+    private final ExtractionRunService extractionRunService;
 
     public EventAnalysisService(
             NewsEventRepository eventRepository,
-            AIService aiService
+            AIService aiService,
+            ExtractionRunService extractionRunService
     ) {
         this.eventRepository = eventRepository;
         this.aiService = aiService;
+        this.extractionRunService = extractionRunService;
     }
 
     @Transactional
@@ -47,6 +51,15 @@ public class EventAnalysisService {
 
         event.setDisagreementLevel(
                 analysis.disagreementLevel()
+        );
+
+        // Which model, prompt and code produced this analysis.
+        event.setSummaryRunId(
+                extractionRunService.runId(
+                        "event-analysis",
+                        aiService.modelName(),
+                        AIService.PROMPT_VERSION
+                )
         );
 
         /*

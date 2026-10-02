@@ -19,6 +19,7 @@ import com.cfs.xnews.processing.processor.CategoryProcessor;
 import com.cfs.xnews.processing.processor.ContentCleaner;
 import com.cfs.xnews.processing.processor.KeywordProcessor;
 import com.cfs.xnews.processing.processor.SentimentProcessor;
+import com.cfs.xnews.provenance.ExtractionRunService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -54,6 +55,9 @@ public class ArticleProcessingService {
 
     private final EventMatcherV2 eventMatcherV2;
     private final EventMatchDecisionRepository eventMatchDecisionRepository;
+    private final ExtractionRunService extractionRunService;
+
+    static final String MATCHER_RUN_KIND = "event-matcher";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final double eventMatchThreshold;
@@ -72,6 +76,7 @@ public class ArticleProcessingService {
             CentroidUpdateStrategy centroidUpdateStrategy,
             EventMatcherV2 eventMatcherV2,
             EventMatchDecisionRepository eventMatchDecisionRepository,
+            ExtractionRunService extractionRunService,
 
             @Value("${ai.event-matcher.threshold:0.94}")
             double eventMatchThreshold,
@@ -94,6 +99,7 @@ public class ArticleProcessingService {
         this.centroidUpdateStrategy = centroidUpdateStrategy;
         this.eventMatcherV2 = eventMatcherV2;
         this.eventMatchDecisionRepository = eventMatchDecisionRepository;
+        this.extractionRunService = extractionRunService;
         this.eventMatchThreshold = eventMatchThreshold;
         this.candidateLimit = candidateLimit;
         this.matcherMode = MatcherMode.parse(matcherMode);
@@ -468,7 +474,7 @@ public class ArticleProcessingService {
                     v1.bestEvent() != null
                             && v1.bestProbability() >= eventMatchThreshold;
 
-            eventMatchDecisionRepository.save(new EventMatchDecision(
+            EventMatchDecision decision = new EventMatchDecision(
                     article.getId(),
                     "v1",
                     mode,
@@ -480,12 +486,20 @@ public class ArticleProcessingService {
                     v1CandidatesJson(v1.results()),
                     (int) v1.predictMs(),
                     null
+            );
+
+            decision.setRunId(extractionRunService.runId(
+                    MATCHER_RUN_KIND,
+                    "v1-centroid@" + eventMatchThreshold,
+                    ExtractionRunService.NO_PROMPT
             ));
+
+            eventMatchDecisionRepository.save(decision);
         }
 
         if (v2 != null) {
 
-            eventMatchDecisionRepository.save(new EventMatchDecision(
+            EventMatchDecision decision = new EventMatchDecision(
                     article.getId(),
                     "v2",
                     mode,
@@ -497,7 +511,17 @@ public class ArticleProcessingService {
                     v2.candidatesJson(),
                     v2.latencyMs(),
                     null
+            );
+
+            // The model version includes the vocabulary version, so each
+            // nightly refit is its own run.
+            decision.setRunId(extractionRunService.runId(
+                    MATCHER_RUN_KIND,
+                    v2.modelVersion(),
+                    ExtractionRunService.NO_PROMPT
             ));
+
+            eventMatchDecisionRepository.save(decision);
 
         } else if (v2Error != null) {
 

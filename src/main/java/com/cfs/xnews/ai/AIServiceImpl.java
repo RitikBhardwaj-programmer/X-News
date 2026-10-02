@@ -40,6 +40,11 @@ public class AIServiceImpl implements AIService {
     }
 
     @Override
+    public String modelName() {
+        return model;
+    }
+
+    @Override
     public EventAIAnalysis analyzeEvent(NewsEvent event) {
 
         String prompt = """
