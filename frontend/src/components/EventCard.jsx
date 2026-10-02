@@ -2,7 +2,6 @@ import { Link } from "react-router";
 
 import {
     verificationInfo,
-    riskInfo,
     formatRelativeTime,
     AI_ESTIMATE_NOTE
 } from "../utils/eventLabels";
@@ -13,11 +12,6 @@ function EventCard({ event }) {
     const verification =
         verificationInfo(
             event.verificationStatus
-        );
-
-    const risk =
-        riskInfo(
-            event.misinformationRisk
         );
 
     const sourceCount =
@@ -50,8 +44,8 @@ function EventCard({ event }) {
                 <span className="source-count">
                     {sourceCount}{" "}
                     {sourceCount === 1
-                        ? "source"
-                        : "sources"}
+                        ? "article"
+                        : "articles"}
 
                     {age && (
                         <>
@@ -91,24 +85,6 @@ function EventCard({ event }) {
 
                         <strong>
                             {event.disagreementLevel}
-                        </strong>
-                    </span>
-                )}
-
-
-                {risk && (
-                    <span
-                        className="metric"
-                        title={AI_ESTIMATE_NOTE}
-                    >
-                        <span className="metric-label">
-                            AI risk
-                        </span>
-
-                        <strong
-                            className={risk.className}
-                        >
-                            {risk.value}
                         </strong>
                     </span>
                 )}

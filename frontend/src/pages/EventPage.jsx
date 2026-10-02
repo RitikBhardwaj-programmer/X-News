@@ -5,20 +5,14 @@ import Header from "../components/Header";
 
 import {
     getEvent,
+    getEventCoverage,
     analyzeEvent
 } from "../services/api";
 
 import {
     verificationInfo,
-    riskInfo
+    formatRelativeTime
 } from "../utils/eventLabels";
-
-
-const NOT_ANALYZED = {
-    value: "—",
-    label: "Not analyzed",
-    className: ""
-};
 
 
 function EventPage() {
@@ -37,6 +31,25 @@ function EventPage() {
 
     const [error, setError] =
         useState(null);
+
+    const [loadedCoverage, setLoadedCoverage] =
+        useState(null);
+
+
+    // Coverage is extra context: if it fails, the event still shows.
+    useEffect(() => {
+
+        getEventCoverage(eventId)
+            .then((data) => setLoadedCoverage({ eventId, data }))
+            .catch((error) => console.error(error));
+
+    }, [eventId]);
+
+    // Ignore a result left over from a previously viewed event.
+    const coverage =
+        loadedCoverage?.eventId === eventId
+            ? loadedCoverage.data
+            : null;
 
 
     useEffect(() => {
@@ -167,12 +180,23 @@ function EventPage() {
             event.verificationStatus
         );
 
-    const risk =
-        riskInfo(
-            event.misinformationRisk
-        ) || NOT_ANALYZED;
-
     const sourceCount = event.articles?.length || 0;
+
+    const outletCount = coverage?.outletCount;
+
+    // Articles in the order outlets published them, with outlet, section
+    // and time from the coverage timeline.
+    const timelineById = new Map(
+        (coverage?.timeline || []).map(
+            (entry, position) => [entry.articleId, { ...entry, position }]
+        )
+    );
+
+    const orderedArticles = [...(event.articles || [])].sort(
+        (a, b) =>
+            (timelineById.get(a.id)?.position ?? Infinity)
+            - (timelineById.get(b.id)?.position ?? Infinity)
+    );
 
 
     return (
@@ -200,8 +224,18 @@ function EventPage() {
                     <div className="event-kicker">
                         {sourceCount}{" "}
                         {sourceCount === 1
-                            ? "SOURCE"
-                            : "SOURCES"}
+                            ? "ARTICLE"
+                            : "ARTICLES"}
+
+                        {outletCount != null && (
+                            <>
+                                {" · "}
+                                {outletCount}{" "}
+                                {outletCount === 1
+                                    ? "OUTLET"
+                                    : "OUTLETS"}
+                            </>
+                        )}
                     </div>
 
                     <h1 className="event-title">
@@ -262,17 +296,20 @@ function EventPage() {
                     <div className="status-card">
 
                         <div className="status-label">
-                            Misinformation risk
+                            Coverage
                         </div>
 
-                        <div
-                            className={`status-main ${risk.className}`}
-                        >
-                            {risk.value}
+                        <div className="status-main">
+                            {outletCount != null
+                                ? `${outletCount} ${outletCount === 1 ? "outlet" : "outlets"}`
+                                : "—"}
                         </div>
 
                         <div className="status-help">
-                            {risk.label}
+                            {coverage?.firstSeen
+                                ? `First report ${formatRelativeTime(coverage.firstSeen)}`
+                                    + ` · latest ${formatRelativeTime(coverage.lastSeen)}`
+                                : "Which outlets reported this, and when"}
                         </div>
 
                     </div>
@@ -280,9 +317,9 @@ function EventPage() {
                 </section>
 
                 <p className="ai-note">
-                    Disagreement and misinformation risk are
-                    AI estimates, not fact-checks. Treat them
-                    as a starting point, not a verdict.
+                    Disagreement is an AI estimate, not a
+                    fact-check. Treat it as a starting point,
+                    not a verdict.
                 </p>
 
 
@@ -330,9 +367,8 @@ function EventPage() {
                                 X-NEWS will compare the
                                 available sources and
                                 generate a neutral summary,
-                                bias analysis, disagreement
-                                level and misinformation
-                                risk.
+                                bias analysis and
+                                disagreement level.
                             </p>
 
                             <button
@@ -414,8 +450,9 @@ function EventPage() {
                         <span className="section-count">
                             {sourceCount}{" "}
                             {sourceCount === 1
-                                ? "source"
-                                : "sources"}
+                                ? "article"
+                                : "articles"}
+                            {coverage && " · oldest first"}
                         </span>
 
                     </div>
@@ -423,8 +460,17 @@ function EventPage() {
 
                     <div className="source-list">
 
-                        {event.articles?.map(
-                            (article, index) => (
+                        {orderedArticles.map(
+                            (article, index) => {
+
+                                const entry =
+                                    timelineById.get(article.id);
+
+                                const seen =
+                                    entry?.publishedAt
+                                    || entry?.observedAt;
+
+                                return (
 
                                 <article
                                     className="source-card"
@@ -438,7 +484,19 @@ function EventPage() {
                                     <div className="source-content">
 
                                         <div className="source-name">
-                                            {article.source}
+                                            {entry
+                                                ? entry.outlet
+                                                    + (entry.feed ? ` → ${entry.feed}` : "")
+                                                : article.source}
+
+                                            {seen && (
+                                                <>
+                                                    {" · "}
+                                                    <time dateTime={seen}>
+                                                        {formatRelativeTime(seen)}
+                                                    </time>
+                                                </>
+                                            )}
                                         </div>
 
                                         <h3>
@@ -468,7 +526,8 @@ function EventPage() {
 
                                 </article>
 
-                            )
+                                );
+                            }
                         )}
 
                     </div>
@@ -595,8 +654,7 @@ function EventPage() {
                                     This story has not been
                                     verified by a trusted
                                     fact-checking source.
-                                    The AI risk score should
-                                    therefore be treated as
+                                    The AI analysis above is
                                     an assessment, not a
                                     confirmation of truth or
                                     falsehood.

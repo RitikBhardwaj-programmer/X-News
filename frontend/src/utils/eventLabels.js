@@ -33,39 +33,6 @@ export function verificationInfo(status) {
 }
 
 
-export function riskInfo(risk) {
-
-    if (risk == null) {
-        return null;
-    }
-
-    const value =
-        `${Math.round(risk * 100)}%`;
-
-    if (risk < 0.3) {
-        return {
-            value,
-            label: "Low risk",
-            className: "risk-low"
-        };
-    }
-
-    if (risk < 0.7) {
-        return {
-            value,
-            label: "Moderate risk",
-            className: "risk-medium"
-        };
-    }
-
-    return {
-        value,
-        label: "High risk",
-        className: "risk-high"
-    };
-}
-
-
 export const AI_ESTIMATE_NOTE =
     "AI estimate, not a fact-check";
 

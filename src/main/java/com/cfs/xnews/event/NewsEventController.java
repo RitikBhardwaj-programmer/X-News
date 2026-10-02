@@ -1,5 +1,6 @@
 package com.cfs.xnews.event;
 
+import com.cfs.xnews.event.dto.EventCoverageResponse;
 import com.cfs.xnews.event.dto.EventSummaryResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,12 @@ public class NewsEventController {
     @GetMapping("/{id}")
     public ResponseEntity<Optional<NewsEvent>> getEvent(@PathVariable Long id){
         return ResponseEntity.ok(eventRepository.findById(id));
+    }
+
+    @GetMapping("/{id}/coverage")
+    public ResponseEntity<EventCoverageResponse> getCoverage(@PathVariable Long id) {
+
+        return ResponseEntity.of(newsEventService.getCoverage(id));
     }
 
     @GetMapping
