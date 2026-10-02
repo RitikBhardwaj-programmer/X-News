@@ -1223,6 +1223,72 @@ a.storyline-title:hover {
   color: var(--link);
 }
 
+.review-tabs {
+  display: flex;
+  gap: 8px;
+
+  margin-bottom: 16px;
+}
+
+.review-tab {
+  padding: 6px 12px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+
+  background: transparent;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.review-tab.active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.review-card {
+  padding: 16px 18px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--surface);
+}
+
+.review-claim {
+  margin-bottom: 6px;
+
+  color: var(--text);
+
+  font-weight: 700;
+}
+
+.review-quote {
+  margin: 0 0 8px;
+  padding-left: 10px;
+
+  border-left: 3px solid var(--accent-border);
+
+  color: var(--text-body);
+
+  font-style: italic;
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
 .match-note {
   margin: -6px 0 16px;
 

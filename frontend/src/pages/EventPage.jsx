@@ -9,6 +9,7 @@ import {
     getEventMatches,
     getEventEntities,
     getEventTimeline,
+    getEventClaims,
     analyzeEvent
 } from "../services/api";
 
@@ -16,6 +17,8 @@ import {
     verificationInfo,
     formatRelativeTime
 } from "../utils/eventLabels";
+
+import { claimText } from "../utils/claimLabels";
 
 
 function EventPage() {
@@ -110,6 +113,24 @@ function EventPage() {
     const timeline =
         loadedTimeline?.eventId === eventId
             ? loadedTimeline.data
+            : [];
+
+
+    const [loadedClaims, setLoadedClaims] =
+        useState(null);
+
+    // Only reviewed, approved claims come back from the server.
+    useEffect(() => {
+
+        getEventClaims(eventId)
+            .then((data) => setLoadedClaims({ eventId, data }))
+            .catch((error) => console.error(error));
+
+    }, [eventId]);
+
+    const claims =
+        loadedClaims?.eventId === eventId
+            ? loadedClaims.data
             : [];
 
 
@@ -562,6 +583,54 @@ function EventPage() {
                     )}
 
                 </section>
+
+
+                {/* NUMBERS REPORTED */}
+
+                {claims.length > 0 && (
+
+                    <section className="content-section">
+
+                        <div className="section-heading">
+                            <div>
+                                <span className="section-eyebrow">
+                                    CLAIMS
+                                </span>
+
+                                <h2>
+                                    Numbers reported
+                                </h2>
+                            </div>
+                        </div>
+
+                        <ul className="cited-list">
+                            {claims.map((claim) => (
+                                <li key={claim.claimId}>
+                                    <strong>{claimText(claim)}</strong>
+                                    {" — "}
+                                    <a href={`#article-${claim.articleId}`} className="citation">
+                                        {claim.outlet}
+                                    </a>
+                                    {(claim.supportingArticles > 0 || claim.conflictingArticles > 0) && (
+                                        <span className="entity-count">
+                                            {" · "}
+                                            {claim.supportingArticles} agree
+                                            {claim.conflictingArticles > 0 && (
+                                                <>, {claim.conflictingArticles} report a different number</>
+                                            )}
+                                        </span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+
+                        <p className="match-note">
+                            Numbers found in the articles and checked by
+                            a reviewer before they appear here.
+                        </p>
+
+                    </section>
+                )}
 
 
                 {/* RELATED COVERAGE */}

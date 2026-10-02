@@ -15,9 +15,15 @@ public class UserController {
             Authentication authentication
     ) {
 
+        // role lets the UI show admin pages; the server still checks it.
+        boolean admin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+
         return Map.of(
                 "email",
-                authentication.getName()
+                authentication.getName(),
+                "role",
+                admin ? "ADMIN" : "USER"
         );
     }
 }
