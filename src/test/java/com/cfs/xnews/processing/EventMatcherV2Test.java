@@ -89,6 +89,18 @@ class EventMatcherV2Test {
         assertThat(EventMatcherV2.cosine(a, new float[]{0, 0, 0})).isEqualTo(0.0);
     }
 
+    // Production 422: a duplicate article's cosine was 1.0000000000000016.
+    @Test
+    void similaritiesStayWithinTheRangeTheAiServiceAccepts() {
+
+        assertThat(EventMatcherV2.clamp(1.0000000000000016)).isEqualTo(1.0);
+        assertThat(EventMatcherV2.clamp(-1.0000001)).isEqualTo(-1.0);
+        assertThat(EventMatcherV2.clamp(0.42)).isEqualTo(0.42);
+
+        float[] v = {0.1f, 0.7f, -0.3f, 0.2f, 0.33f, -0.9f, 0.05f};
+        assertThat(EventMatcherV2.cosine(v, v)).isLessThanOrEqualTo(1.0);
+    }
+
     @Test
     void truncateKeepsShortTextAndNull() {
 
