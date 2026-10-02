@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Component
 public class CategoryProcessor {
@@ -159,6 +161,11 @@ public class CategoryProcessor {
         return "OTHER";
     }
 
+    // Whole words only (an optional plural "s"/"es" is allowed): a plain
+    // substring match made "ai" fire on "said", "rain" and "Chennai", so
+    // most articles were classed as AI.
+    private static final Map<String, Pattern> KEYWORD_PATTERNS = new ConcurrentHashMap<>();
+
     private boolean containsAny(
             String text,
             String... keywords
@@ -166,7 +173,12 @@ public class CategoryProcessor {
 
         for (String keyword : keywords) {
 
-            if (text.contains(keyword)) {
+            Pattern pattern = KEYWORD_PATTERNS.computeIfAbsent(
+                    keyword,
+                    k -> Pattern.compile("\\b" + Pattern.quote(k) + "(?:e?s)?\\b")
+            );
+
+            if (pattern.matcher(text).find()) {
                 return true;
             }
         }
