@@ -1115,6 +1115,37 @@ a:hover {
   cursor: help;
 }
 
+.entity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-bottom: 14px;
+}
+
+.entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 5px 11px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 13px;
+}
+
+.entity-count {
+  color: var(--text-muted);
+
+  font-size: 11px;
+}
+
 .cited-list {
   margin: 0;
   padding-left: 18px;
@@ -1147,6 +1178,49 @@ a:hover {
 .source-card:target {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.storyline {
+  margin: 0 0 14px;
+  padding: 0;
+
+  list-style: none;
+
+  border-left: 2px solid var(--border-strong);
+}
+
+.storyline li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+
+  padding: 6px 0 6px 14px;
+}
+
+.storyline-current {
+  border-left: 2px solid var(--accent);
+  margin-left: -2px;
+}
+
+.storyline-date {
+  min-width: 90px;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+}
+
+.storyline-title {
+  flex: 1 1 260px;
+
+  color: var(--text);
+
+  font-weight: 600;
+}
+
+a.storyline-title:hover {
+  color: var(--link);
 }
 
 .match-note {
