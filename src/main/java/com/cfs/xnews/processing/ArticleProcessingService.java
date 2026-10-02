@@ -1,6 +1,8 @@
 package com.cfs.xnews.processing;
 
 import com.cfs.xnews.event.CentroidUpdateStrategy;
+import com.cfs.xnews.event.EventMatchDecision;
+import com.cfs.xnews.event.EventMatchDecisionRepository;
 import com.cfs.xnews.event.EventMatchingClient;
 import com.cfs.xnews.event.NewsEvent;
 import com.cfs.xnews.event.NewsEventRepository;
@@ -17,15 +19,20 @@ import com.cfs.xnews.processing.processor.CategoryProcessor;
 import com.cfs.xnews.processing.processor.ContentCleaner;
 import com.cfs.xnews.processing.processor.KeywordProcessor;
 import com.cfs.xnews.processing.processor.SentimentProcessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,8 +52,13 @@ public class ArticleProcessingService {
     private final EventMatchingClient eventMatchingClient;
     private final CentroidUpdateStrategy centroidUpdateStrategy;
 
+    private final EventMatcherV2 eventMatcherV2;
+    private final EventMatchDecisionRepository eventMatchDecisionRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     private final double eventMatchThreshold;
     private final int candidateLimit;
+    private final MatcherMode matcherMode;
 
     public ArticleProcessingService(
             NewsEventService newsEventService,
@@ -58,12 +70,17 @@ public class ArticleProcessingService {
             ContentCleaner contentCleaner,
             EventMatchingClient eventMatchingClient,
             CentroidUpdateStrategy centroidUpdateStrategy,
+            EventMatcherV2 eventMatcherV2,
+            EventMatchDecisionRepository eventMatchDecisionRepository,
 
             @Value("${ai.event-matcher.threshold:0.94}")
             double eventMatchThreshold,
 
             @Value("${ai.event-matcher.candidate-limit:30}")
-            int candidateLimit
+            int candidateLimit,
+
+            @Value("${ai.event-matcher.mode:v1}")
+            String matcherMode
     ) {
 
         this.newsEventService = newsEventService;
@@ -75,8 +92,13 @@ public class ArticleProcessingService {
         this.contentCleaner = contentCleaner;
         this.eventMatchingClient = eventMatchingClient;
         this.centroidUpdateStrategy = centroidUpdateStrategy;
+        this.eventMatcherV2 = eventMatcherV2;
+        this.eventMatchDecisionRepository = eventMatchDecisionRepository;
         this.eventMatchThreshold = eventMatchThreshold;
         this.candidateLimit = candidateLimit;
+        this.matcherMode = MatcherMode.parse(matcherMode);
+
+        log.info("Event matcher mode: {}", this.matcherMode);
     }
 
     @Transactional
@@ -222,7 +244,7 @@ public class ArticleProcessingService {
     // EVENT MATCHING
     // =========================================================
 
-    private NewsEvent matchOrCreateEvent(
+    NewsEvent matchOrCreateEvent(
             Article article,
             float[] embedding,
             long embedMs
@@ -230,77 +252,71 @@ public class ArticleProcessingService {
 
         long retrievalStartedAt = System.nanoTime();
 
+        String pgVector = toPgVector(embedding);
+
         List<NewsEvent> candidates =
                 newsEventRepository.findNearestOpenEvents(
-                        toPgVector(embedding),
+                        pgVector,
                         candidateLimit
                 );
 
         long retrievalMs = elapsedMs(retrievalStartedAt);
 
-        NewsEvent bestEvent = null;
-        double bestProbability = -1.0;
-        long predictMs = 0;
+        Map<Long, NewsEvent> candidatesById = new HashMap<>();
 
-        if (!candidates.isEmpty()) {
+        for (NewsEvent candidate : candidates) {
+            candidatesById.put(candidate.getId(), candidate);
+        }
 
-            List<EventCandidate> eventCandidates =
-                    candidates.stream()
-                            .map(candidate -> new EventCandidate(
-                                    candidate.getId(),
-                                    candidate.getCentroidEmbedding(),
-                                    calculateTemporalScore(
-                                            article.getPublishedAt(),
-                                            candidate.getLastActivityAt()
-                                    )
-                            ))
-                            .toList();
+        // v2 runs in shadow and live mode. Only the AI call is caught: a
+        // failed SQL statement would abort the article's transaction anyway.
+        EventMatcherV2.Outcome v2 = null;
+        String v2Error = null;
 
-            long predictStartedAt = System.nanoTime();
+        if (matcherMode != MatcherMode.V1) {
 
-            EventMatchResponse response =
-                    eventMatchingClient.predict(
-                            new EventMatchRequest(
-                                    embedding,
-                                    eventCandidates
-                            )
-                    );
+            try {
 
-            predictMs = elapsedMs(predictStartedAt);
+                v2 = eventMatcherV2.decide(article, embedding, pgVector, candidates);
 
-            Map<Long, NewsEvent> candidatesById = new HashMap<>();
+            } catch (RestClientException e) {
 
-            for (NewsEvent candidate : candidates) {
-                candidatesById.put(candidate.getId(), candidate);
-            }
+                v2Error = e.getClass().getSimpleName() + ": " + e.getMessage();
 
-            for (EventMatchResult result : response.results()) {
-
-                NewsEvent candidate =
-                        candidatesById.get(result.eventId());
-
-                if (candidate == null) {
-                    continue;
-                }
-
-                log.debug(
-                        "Candidate event={} similarity={} probability={}",
-                        result.eventId(),
-                        result.similarity(),
-                        result.probability()
+                log.warn(
+                        "v2 event matcher failed for article={}, v1 decides: {}",
+                        article.getId(),
+                        v2Error
                 );
-
-                if (result.probability() > bestProbability) {
-
-                    bestProbability = result.probability();
-                    bestEvent = candidate;
-                }
             }
+        }
+
+        boolean v2Decides = matcherMode == MatcherMode.V2 && v2 != null;
+
+        V1Decision v1 = v2Decides
+                ? null
+                : decideV1(article, embedding, candidates, candidatesById);
+
+        NewsEvent bestEvent;
+        double bestProbability;
+        double threshold;
+
+        if (v2Decides) {
+
+            bestEvent = v2.chosenEventId() == null ? null : candidatesById.get(v2.chosenEventId());
+            bestProbability = v2.bestProbability() == null ? -1.0 : v2.bestProbability();
+            threshold = v2.threshold();
+
+        } else {
+
+            bestEvent = v1.bestEvent();
+            bestProbability = v1.bestProbability();
+            threshold = eventMatchThreshold;
         }
 
         boolean matched =
                 bestEvent != null
-                        && bestProbability >= eventMatchThreshold;
+                        && bestProbability >= threshold;
 
         NewsEvent newsEvent;
 
@@ -332,20 +348,194 @@ public class ArticleProcessingService {
             );
         }
 
+        if (matcherMode != MatcherMode.V1) {
+            recordDecisions(article, v1, v2, v2Error, v2Decides);
+        }
+
         log.info(
-                "Event match article={} decision={} event={} candidates={} bestProbability={} probabilityBucket={} embedMs={} retrievalMs={} predictMs={}",
+                "Event match article={} decision={} event={} matcher={} candidates={} bestProbability={} probabilityBucket={} embedMs={} retrievalMs={} predictMs={} v2Event={} v2Probability={} v2Ms={}",
                 article.getId(),
                 matched ? "ATTACHED" : "CREATED",
                 newsEvent.getId(),
+                v2Decides ? "v2" : "v1",
                 candidates.size(),
                 bestProbability,
-                probabilityBucket(bestProbability, eventMatchThreshold),
+                probabilityBucket(bestProbability, threshold),
                 embedMs,
                 retrievalMs,
-                predictMs
+                v1 == null ? 0 : v1.predictMs(),
+                v2 == null ? null : v2.chosenEventId(),
+                v2 == null ? null : v2.bestProbability(),
+                v2 == null ? null : v2.latencyMs()
         );
 
         return newsEvent;
+    }
+
+    // v1: the centroid matcher's best candidate (null if there were none).
+    private record V1Decision(
+            NewsEvent bestEvent,
+            double bestProbability,
+            long predictMs,
+            List<EventMatchResult> results
+    ) {
+    }
+
+    private V1Decision decideV1(
+            Article article,
+            float[] embedding,
+            List<NewsEvent> candidates,
+            Map<Long, NewsEvent> candidatesById
+    ) {
+
+        NewsEvent bestEvent = null;
+        double bestProbability = -1.0;
+        long predictMs = 0;
+        List<EventMatchResult> results = List.of();
+
+        if (!candidates.isEmpty()) {
+
+            List<EventCandidate> eventCandidates =
+                    candidates.stream()
+                            .map(candidate -> new EventCandidate(
+                                    candidate.getId(),
+                                    candidate.getCentroidEmbedding(),
+                                    calculateTemporalScore(
+                                            article.getPublishedAt(),
+                                            candidate.getLastActivityAt()
+                                    )
+                            ))
+                            .toList();
+
+            long predictStartedAt = System.nanoTime();
+
+            EventMatchResponse response =
+                    eventMatchingClient.predict(
+                            new EventMatchRequest(
+                                    embedding,
+                                    eventCandidates
+                            )
+                    );
+
+            predictMs = elapsedMs(predictStartedAt);
+
+            results = response.results();
+
+            for (EventMatchResult result : results) {
+
+                NewsEvent candidate =
+                        candidatesById.get(result.eventId());
+
+                if (candidate == null) {
+                    continue;
+                }
+
+                log.debug(
+                        "Candidate event={} similarity={} probability={}",
+                        result.eventId(),
+                        result.similarity(),
+                        result.probability()
+                );
+
+                if (result.probability() > bestProbability) {
+
+                    bestProbability = result.probability();
+                    bestEvent = candidate;
+                }
+            }
+        }
+
+        return new V1Decision(bestEvent, bestProbability, predictMs, results);
+    }
+
+    // =========================================================
+    // DECISION RECORDS (shadow and live mode)
+    // =========================================================
+
+    private void recordDecisions(
+            Article article,
+            V1Decision v1,
+            EventMatcherV2.Outcome v2,
+            String v2Error,
+            boolean v2Decides
+    ) {
+
+        String mode = matcherMode.decisionMode();
+
+        if (v1 != null) {
+
+            boolean v1Attaches =
+                    v1.bestEvent() != null
+                            && v1.bestProbability() >= eventMatchThreshold;
+
+            eventMatchDecisionRepository.save(new EventMatchDecision(
+                    article.getId(),
+                    "v1",
+                    mode,
+                    "v1-centroid",
+                    v1Attaches ? v1.bestEvent().getId() : null,
+                    true,
+                    v1.bestProbability() < 0 ? null : v1.bestProbability(),
+                    eventMatchThreshold,
+                    v1CandidatesJson(v1.results()),
+                    (int) v1.predictMs(),
+                    null
+            ));
+        }
+
+        if (v2 != null) {
+
+            eventMatchDecisionRepository.save(new EventMatchDecision(
+                    article.getId(),
+                    "v2",
+                    mode,
+                    v2.modelVersion(),
+                    v2.chosenEventId(),
+                    v2Decides,
+                    v2.bestProbability(),
+                    v2.threshold(),
+                    v2.candidatesJson(),
+                    v2.latencyMs(),
+                    null
+            ));
+
+        } else if (v2Error != null) {
+
+            eventMatchDecisionRepository.save(new EventMatchDecision(
+                    article.getId(),
+                    "v2",
+                    mode,
+                    null,
+                    null,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    v2Error
+            ));
+        }
+    }
+
+    private String v1CandidatesJson(List<EventMatchResult> results) {
+
+        List<Map<String, Object>> top = results.stream()
+                .sorted(Comparator.comparingDouble(EventMatchResult::probability).reversed())
+                .limit(EventMatcherV2.STORED_CANDIDATES)
+                .map(result -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("event_id", result.eventId());
+                    entry.put("probability", result.probability());
+                    entry.put("similarity", result.similarity());
+                    return entry;
+                })
+                .toList();
+
+        try {
+            return objectMapper.writeValueAsString(top);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Could not serialise v1 candidates", e);
+        }
     }
 
     // =========================================================
