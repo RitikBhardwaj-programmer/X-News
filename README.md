@@ -1021,6 +1021,10 @@ AI_SERVICE_API_KEY           shared with the AI service
 AI_EVENT_MATCHER_URL         default http://localhost:8000
 AI_EVENT_MATCHER_THRESHOLD   default 0.94
 AI_EVENT_MATCHER_CANDIDATE_LIMIT  default 30
+AI_EVENT_MATCHER_MODE        v1 (default) | shadow | v2 - V4 stage 1b matcher:
+                             shadow runs v2 next to v1 and stores both
+                             decisions in event_match_decisions; v2 lets v2
+                             decide (falls back to v1 if its call fails)
 JEV_API_KEY                  without it, categories use keyword rules
 ```
 
