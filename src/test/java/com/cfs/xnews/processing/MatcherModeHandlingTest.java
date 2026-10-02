@@ -15,6 +15,7 @@ import com.cfs.xnews.processing.processor.CategoryProcessor;
 import com.cfs.xnews.processing.processor.ContentCleaner;
 import com.cfs.xnews.processing.processor.KeywordProcessor;
 import com.cfs.xnews.processing.processor.SentimentProcessor;
+import com.cfs.xnews.provenance.ExtractionRunService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -47,6 +48,7 @@ class MatcherModeHandlingTest {
     private EventMatchingClient eventMatchingClient;
     private EventMatcherV2 eventMatcherV2;
     private EventMatchDecisionRepository decisions;
+    private ExtractionRunService runs;
 
     private NewsEvent existing;
     private NewsEvent created;
@@ -60,6 +62,8 @@ class MatcherModeHandlingTest {
         eventMatchingClient = mock(EventMatchingClient.class);
         eventMatcherV2 = mock(EventMatcherV2.class);
         decisions = mock(EventMatchDecisionRepository.class);
+        runs = mock(ExtractionRunService.class);
+        when(runs.runId(any(), any(), any())).thenReturn(42L);
 
         existing = mock(NewsEvent.class);
         when(existing.getId()).thenReturn(1L);
@@ -93,6 +97,7 @@ class MatcherModeHandlingTest {
                 centroids,
                 eventMatcherV2,
                 decisions,
+                runs,
                 0.94,
                 30,
                 mode
@@ -143,6 +148,9 @@ class MatcherModeHandlingTest {
         assertThat(saved.get(1).getProbability()).isEqualTo(0.6);
         assertThat(saved.get(1).getThreshold()).isEqualTo(0.98);
         assertThat(saved.get(1).getModelVersion()).isEqualTo("v2-b/default");
+        assertThat(saved).extracting(EventMatchDecision::getRunId).containsExactly(42L, 42L);
+        verify(runs).runId("event-matcher", "v1-centroid@0.94", ExtractionRunService.NO_PROMPT);
+        verify(runs).runId("event-matcher", "v2-b/default", ExtractionRunService.NO_PROMPT);
     }
 
     @Test

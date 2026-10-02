@@ -20,6 +20,11 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
+# Provenance (V4 roadmap step 1): the deploy workflow passes the image tag,
+# so stored runs record which code produced them.
+ARG CODE_VERSION=local
+ENV XNEWS_CODE_VERSION=${CODE_VERSION}
+
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080

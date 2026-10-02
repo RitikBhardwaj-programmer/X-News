@@ -118,6 +118,10 @@ public class NewsEvent {
     @Column(length = 30)
     private String verificationStatus;
 
+    // Provenance of the summary/bias analysis (extraction_runs.id).
+    @Column(name = "summary_run_id")
+    private Long summaryRunId;
+
     public Long getId() {
         return id;
     }
@@ -156,6 +160,14 @@ public class NewsEvent {
 
     public void setVerificationStatus(String verificationStatus) {
         this.verificationStatus = verificationStatus;
+    }
+
+    public Long getSummaryRunId() {
+        return summaryRunId;
+    }
+
+    public void setSummaryRunId(Long summaryRunId) {
+        this.summaryRunId = summaryRunId;
     }
 
     public void setTitle(String title) {
