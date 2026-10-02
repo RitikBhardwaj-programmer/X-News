@@ -156,10 +156,10 @@ public class EventMatcherV2 {
                             article.getPublishedAt(),
                             candidate.getLastActivityAt()
                     ),
-                    ((Number) row[1]).doubleValue(),
-                    ((Number) row[2]).doubleValue(),
-                    ((Number) row[3]).doubleValue(),
-                    ((Number) row[4]).doubleValue(),
+                    similarity(row[1]),
+                    similarity(row[2]),
+                    similarity(row[3]),
+                    similarity(row[4]),
                     members
             ));
         }
@@ -200,7 +200,17 @@ public class EventMatcherV2 {
             normB += (double) b[i] * b[i];
         }
 
-        return normA == 0 || normB == 0 ? 0 : dot / Math.sqrt(normA * normB);
+        return normA == 0 || normB == 0 ? 0 : clamp(dot / Math.sqrt(normA * normB));
+    }
+
+    // A duplicate article's cosine can land a rounding error above 1
+    // (e.g. 1.0000000000000016), which the AI service rejects with 422.
+    static double clamp(double similarity) {
+        return Math.max(-1.0, Math.min(1.0, similarity));
+    }
+
+    private static double similarity(Object sqlValue) {
+        return clamp(((Number) sqlValue).doubleValue());
     }
 
     static String truncate(String text, int maxChars) {
