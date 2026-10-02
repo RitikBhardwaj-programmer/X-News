@@ -1146,6 +1146,40 @@ a:hover {
   font-size: 11px;
 }
 
+.cited-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.cited-list li {
+  margin-bottom: 8px;
+
+  line-height: 1.6;
+}
+
+.citations {
+  margin-left: 4px;
+}
+
+.citation {
+  margin-left: 2px;
+
+  color: var(--link);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Citation jumps land below the sticky header. */
+.source-card {
+  scroll-margin-top: 90px;
+}
+
+.source-card:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
 .match-note {
   margin: -6px 0 16px;
 
