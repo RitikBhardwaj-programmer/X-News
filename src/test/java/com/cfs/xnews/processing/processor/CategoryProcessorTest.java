@@ -110,4 +110,34 @@ class CategoryProcessorTest {
         assertThat(categoryProcessor.classify(article)).isEqualTo("AI");
         verify(jevClient, never()).evaluate(org.mockito.ArgumentMatchers.any());
     }
+
+    private String keywordCategory(String title, String description) {
+
+        when(jevClient.isConfigured()).thenReturn(false);
+
+        return new CategoryProcessor(jevClient).classify(
+                new Article(title, description, "http://example.com/" + title.hashCode(), "example", null));
+    }
+
+    @Test
+    void keywordsMatchWholeWordsNotPartsOfWords() {
+
+        // "ai" inside "said", "rain", "Chennai"; "sport" inside "transport";
+        // "market" inside "supermarket".
+        assertThat(keywordCategory("Heavy rain lashes Chennai, schools shut", "Officials said more showers are likely"))
+                .isEqualTo("OTHER");
+        assertThat(keywordCategory("Transport minister inaugurates new bus depot", null))
+                .isEqualTo("POLITICS");
+        assertThat(keywordCategory("Supermarket chain opens 20 stores", null))
+                .isEqualTo("OTHER");
+    }
+
+    @Test
+    void keywordsStillMatchWholeWordsAndPlurals() {
+
+        assertThat(keywordCategory("New AI model beats benchmarks", null)).isEqualTo("AI");
+        assertThat(keywordCategory("Stock markets fall on rate fears", null)).isEqualTo("BUSINESS");
+        assertThat(keywordCategory("Assembly elections: polling ends", null)).isEqualTo("POLITICS");
+        assertThat(keywordCategory("IND vs WI: cricket fans throng stadium", null)).isEqualTo("SPORTS");
+    }
 }
