@@ -1,0 +1,102 @@
+package com.cfs.xnews;
+
+import com.cfs.xnews.claim.ClaimService;
+import com.cfs.xnews.entity.EntityService;
+import com.cfs.xnews.kafka.ArticleEvent;
+import com.cfs.xnews.processing.ArticleProcessingService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.util.List;
+
+/**
+ * TEMPORARY local end-to-end harness (xnews-local-run skill, section 5).
+ * Copy to src/test/java/com/cfs/xnews/LocalScratchRunTest.java, run it, read
+ * the SCRATCH-RUN lines, then DELETE it. Never commit it.
+ *
+ * It boots the full application (catching wiring errors that unit tests
+ * miss), applies every migration to a fresh scratch database, copies the
+ * newest local articles into it and processes them exactly as the Kafka
+ * consumer would (processing, then entities, then claims).
+ */
+@EnabledIfEnvironmentVariable(named = "XNEWS_LOCAL_SCRATCH_RUN", matches = "true")
+@SpringBootTest(properties = {
+        "ai.event-matcher.mode=shadow",
+        "spring.kafka.listener.auto-startup=false"
+})
+class LocalScratchRunTest {
+
+    private static final int ARTICLES = 300;
+
+    @Autowired
+    private ArticleProcessingService processingService;
+
+    @Autowired
+    private EntityService entityService;
+
+    @Autowired
+    private ClaimService claimService;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
+    @Test
+    void processArticlesOnAScratchDatabase() throws Exception {
+
+        String database = jdbc.queryForObject("select current_database()", String.class);
+        if (database == null || !database.startsWith("xnews_shadow")) {
+            throw new IllegalStateException("Expected a scratch database xnews_shadowN, got " + database);
+        }
+
+        if (jdbc.queryForObject("select count(*) from articles", Integer.class) == 0) {
+            try (Connection source = DriverManager.getConnection(
+                    "jdbc:postgresql://localhost:15432/xnews", "postgres", "postgres");
+                 ResultSet rows = source.createStatement().executeQuery("""
+                         select title, description, url, source, published_at, created_at
+                         from (select * from articles order by created_at desc, id desc limit %d) newest
+                         order by created_at, id
+                         """.formatted(ARTICLES))) {
+                while (rows.next()) {
+                    jdbc.update("""
+                            insert into articles (title, description, url, source, published_at, created_at, processed)
+                            values (?, ?, ?, ?, ?, ?, false)
+                            """,
+                            rows.getString(1), rows.getString(2), rows.getString(3), rows.getString(4),
+                            rows.getTimestamp(5), rows.getTimestamp(6));
+                }
+            }
+        }
+
+        List<Long> ids = jdbc.queryForList(
+                "select id from articles where processed = false order by created_at, id", Long.class);
+
+        int failed = 0;
+        for (Long id : ids) {
+            try {
+                processingService.process(new ArticleEvent(id, null, null, null, null, null));
+                entityService.recordMentions(id);
+                claimService.recordClaims(id);
+            } catch (RuntimeException e) {
+                failed++;
+                System.out.println("SCRATCH-RUN failed article=" + id + ": " + e);
+            }
+        }
+
+        System.out.println("SCRATCH-RUN processed=" + ids.size() + " failed=" + failed);
+        System.out.println("SCRATCH-RUN " + jdbc.queryForMap("""
+                select (select count(*) from news_events) as events,
+                       (select count(*) from event_match_decisions) as decisions,
+                       (select count(*) from entity_mentions) as mentions,
+                       (select count(*) from claims) as claims,
+                       (select count(*) from extraction_runs) as runs
+                """));
+
+        // Add the checks for the change under test here, printed as SCRATCH-RUN lines.
+    }
+}
