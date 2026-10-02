@@ -97,8 +97,7 @@ public class NewsEventService {
                         event.getCreatedAt(),
                         event.getSourceCount(),
                         event.getVerificationStatus(),
-                        event.getDisagreementLevel(),
-                        event.getMisinformationRisk()
+                        event.getDisagreementLevel()
                 ))
                 .toList();
     }

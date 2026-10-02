@@ -56,8 +56,7 @@ public class AIServiceImpl implements AIService {
                 {
                   "summary": "3-4 sentence neutral summary",
                   "biasAnalysis": "cross-source framing and bias analysis",
-                  "disagreementLevel": "LOW",
-                  "misinformationRisk": 0.0
+                  "disagreementLevel": "LOW"
                 }
 
                 disagreementLevel must be exactly:
@@ -71,8 +70,6 @@ public class AIServiceImpl implements AIService {
 
                 HIGH:
                 Sources make major conflicting claims about the event.
-
-                misinformationRisk must be a number from 0.0 to 1.0.
 
                 IMPORTANT:
                 Do not claim that something is false merely because

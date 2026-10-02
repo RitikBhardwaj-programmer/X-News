@@ -106,7 +106,6 @@ class NewsEventServiceTest {
         when(projection.getSourceCount()).thenReturn(3L);
         when(projection.getVerificationStatus()).thenReturn("CONTESTED");
         when(projection.getDisagreementLevel()).thenReturn("HIGH");
-        when(projection.getMisinformationRisk()).thenReturn(0.42);
 
         when(eventRepository.findAllEventSummaries()).thenReturn(List.of(projection));
 
@@ -118,7 +117,10 @@ class NewsEventServiceTest {
         assertThat(event.sourceCount()).isEqualTo(3L);
         assertThat(event.verificationStatus()).isEqualTo("CONTESTED");
         assertThat(event.disagreementLevel()).isEqualTo("HIGH");
-        assertThat(event.misinformationRisk()).isEqualTo(0.42);
+        // The deprecated misinformation risk is no longer part of the API.
+        assertThat(EventSummaryResponse.class.getRecordComponents())
+                .extracting(java.lang.reflect.RecordComponent::getName)
+                .doesNotContain("misinformationRisk");
     }
 
     @Test

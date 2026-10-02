@@ -158,6 +158,22 @@ export async function getEventMatches(id) {
 }
 
 
+export async function searchArticles(query) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/search?q=${encodeURIComponent(query)}`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function getEventCoverage(id) {
 
     const response =

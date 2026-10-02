@@ -52,7 +52,6 @@ public interface NewsEventRepository
             e.createdAt AS createdAt,
             e.verificationStatus AS verificationStatus,
             e.disagreementLevel AS disagreementLevel,
-            e.misinformationRisk AS misinformationRisk,
             COUNT(a) AS sourceCount
         FROM NewsEvent e
         LEFT JOIN e.articles a
@@ -63,8 +62,7 @@ public interface NewsEventRepository
             e.summary,
             e.createdAt,
             e.verificationStatus,
-            e.disagreementLevel,
-            e.misinformationRisk
+            e.disagreementLevel
         ORDER BY e.createdAt DESC
         """)
     List<EventSummaryProjection> findAllEventSummaries();
