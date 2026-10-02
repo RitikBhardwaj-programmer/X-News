@@ -270,6 +270,36 @@ a:hover {
   font-size: 12px;
 }
 
+.header-search input {
+  width: 200px;
+
+  padding: 7px 11px;
+
+  border: 1px solid var(--border-strong);
+
+  border-radius: 7px;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 12px;
+}
+
+.header-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.search-note {
+  margin: 0 0 16px;
+
+  color: var(--text-muted);
+
+  font-size: 13px;
+}
+
 .logout-button {
   padding: 7px 11px;
 
@@ -1689,6 +1719,10 @@ input:focus-visible {
 
   .user-email {
     display: none;
+  }
+
+  .header-search input {
+    width: 130px;
   }
 
   .container {

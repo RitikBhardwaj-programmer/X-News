@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { useAuth } from "../context/useAuth";
 import { getTheme, saveTheme } from "../utils/theme";
@@ -14,6 +14,27 @@ function Header() {
 
     const [theme, setTheme] =
         useState(getTheme);
+
+    const [searchParams] =
+        useSearchParams();
+
+    const [query, setQuery] =
+        useState(searchParams.get("q") || "");
+
+    const navigate =
+        useNavigate();
+
+
+    function submitSearch(submitEvent) {
+
+        submitEvent.preventDefault();
+
+        const text = query.trim();
+
+        if (text) {
+            navigate(`/search?q=${encodeURIComponent(text)}`);
+        }
+    }
 
 
     function toggleTheme() {
@@ -42,6 +63,23 @@ function Header() {
 
 
                 <div className="header-actions">
+
+                    <form
+                        className="header-search"
+                        role="search"
+                        onSubmit={submitSearch}
+                    >
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(changeEvent) =>
+                                setQuery(changeEvent.target.value)
+                            }
+                            placeholder="Search articles"
+                            aria-label="Search articles"
+                            maxLength={200}
+                        />
+                    </form>
 
                     <span className="user-email">
                         {user?.email}
