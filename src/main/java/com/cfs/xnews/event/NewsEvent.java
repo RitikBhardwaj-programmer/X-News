@@ -118,7 +118,6 @@ public class NewsEvent {
     @Column(length = 30)
     private String verificationStatus;
 
-    private Double misinformationRisk;
     public Long getId() {
         return id;
     }
@@ -157,14 +156,6 @@ public class NewsEvent {
 
     public void setVerificationStatus(String verificationStatus) {
         this.verificationStatus = verificationStatus;
-    }
-
-    public Double getMisinformationRisk() {
-        return misinformationRisk;
-    }
-
-    public void setMisinformationRisk(Double misinformationRisk) {
-        this.misinformationRisk = misinformationRisk;
     }
 
     public void setTitle(String title) {

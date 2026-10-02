@@ -19,6 +19,4 @@ public interface EventSummaryProjection {
     String getVerificationStatus();
 
     String getDisagreementLevel();
-
-    Double getMisinformationRisk();
 }

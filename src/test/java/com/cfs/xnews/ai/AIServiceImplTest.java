@@ -19,6 +19,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AIServiceImplTest {
 
     private static final String VALID_JSON = """
+            {"summary":"s","biasAnalysis":"b","disagreementLevel":"LOW"}
+            """;
+
+    // A reply in the old format, which still had a risk score.
+    private static final String OLD_FORMAT_JSON = """
             {"summary":"s","biasAnalysis":"b","disagreementLevel":"LOW","misinformationRisk":0.1}
             """;
 
@@ -68,6 +73,15 @@ class AIServiceImplTest {
         EventAIAnalysis analysis = service.analyzeEvent(event());
 
         assertThat(service.calls).isEqualTo(3);
+        assertThat(analysis.disagreementLevel()).isEqualTo("LOW");
+    }
+
+    @Test
+    void analyzeEvent_ignoresARiskScoreInAnOldFormatReply() {
+
+        EventAIAnalysis analysis = new ScriptedAIService(OLD_FORMAT_JSON).analyzeEvent(event());
+
+        assertThat(analysis.summary()).isEqualTo("s");
         assertThat(analysis.disagreementLevel()).isEqualTo("LOW");
     }
 
