@@ -59,6 +59,14 @@ class NewsEventServiceTest {
     }
 
     @Test
+    void getCoverage_unknownEvent_isEmpty() {
+
+        when(eventRepository.findById(404L)).thenReturn(Optional.empty());
+
+        assertThat(newsEventService.getCoverage(404L)).isEmpty();
+    }
+
+    @Test
     void getAllEvents_includesAnalysisFieldsInSummary() {
 
         EventSummaryProjection projection = mock(EventSummaryProjection.class);

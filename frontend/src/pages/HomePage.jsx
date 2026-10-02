@@ -103,8 +103,8 @@ function HomePage() {
                                 <p>
                                     X-NEWS compares reporting
                                     across sources and uses AI
-                                    to surface bias, disagreement
-                                    and misinformation risk.
+                                    to surface bias and
+                                    disagreement.
                                 </p>
 
                             </div>

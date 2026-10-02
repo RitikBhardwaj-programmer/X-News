@@ -19,7 +19,7 @@ Write longer SQL to a file in the scratchpad and run it with `-f`.
 $u = [Environment]::GetEnvironmentVariable('XNEWS_PROD_DATABASE_URL','User')
 if (-not $u) { throw 'XNEWS_PROD_DATABASE_URL not set' }
 $base = $u.Substring(5).Split('?')[0]            # drop "jdbc:" and query params
-"host: " + ($base -replace '^postgresql://([^/]+)/.*','$1')
+"host: " + $base.Split('/')[2]                  # no $-digit here: skill arguments would replace it
 $env:PGUSER = [Environment]::GetEnvironmentVariable('XNEWS_PROD_DATABASE_USERNAME','User')
 $env:PGPASSWORD = [Environment]::GetEnvironmentVariable('XNEWS_PROD_DATABASE_PASSWORD','User')
 $env:PGSSLMODE = 'require'

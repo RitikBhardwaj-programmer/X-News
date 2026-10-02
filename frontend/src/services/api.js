@@ -142,6 +142,22 @@ export async function getEvent(id) {
 }
 
 
+export async function getEventCoverage(id) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/events/${id}/coverage`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function analyzeEvent(id) {
 
     const response =

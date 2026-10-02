@@ -1,16 +1,28 @@
 package com.cfs.xnews.event;
 
 import com.cfs.xnews.analysis.FactCheckRepository;
+import com.cfs.xnews.event.dto.EventCoverageResponse;
+import com.cfs.xnews.event.dto.EventCoverageResponse.OutletCoverage;
+import com.cfs.xnews.event.dto.EventCoverageResponse.TimelineEntry;
 import com.cfs.xnews.event.dto.EventSummaryResponse;
 import com.cfs.xnews.news.articles.Article;
 import com.cfs.xnews.news.articles.ArticleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class NewsEventService {
+
+    private static final String SOURCE_SEPARATOR = " -> ";
 
     private final NewsEventRepository eventRepository;
     private final ArticleRepository articleRepository;
@@ -55,6 +67,79 @@ public class NewsEventService {
                         event.getMisinformationRisk()
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<EventCoverageResponse> getCoverage(Long id) {
+
+        return eventRepository
+                .findById(id)
+                .map(event -> buildCoverage(event.getId(), event.getArticles()));
+    }
+
+    static EventCoverageResponse buildCoverage(Long eventId, List<Article> articles) {
+
+        List<TimelineEntry> timeline = articles.stream()
+                .map(article -> new TimelineEntry(
+                        article.getId(),
+                        article.getTitle(),
+                        outletOf(article.getSource()),
+                        feedOf(article.getSource()),
+                        article.getUrl(),
+                        article.getPublishedAt(),
+                        article.getCreatedAt()
+                ))
+                .sorted(Comparator.comparing(NewsEventService::seenAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        // Insertion order follows the timeline, so outlets are listed in the
+        // order they first reported the event.
+        Map<String, List<TimelineEntry>> byOutlet = new LinkedHashMap<>();
+        for (TimelineEntry entry : timeline) {
+            byOutlet.computeIfAbsent(entry.outlet(), key -> new ArrayList<>()).add(entry);
+        }
+
+        List<OutletCoverage> outlets = byOutlet.entrySet().stream()
+                .map(outlet -> new OutletCoverage(
+                        outlet.getKey(),
+                        outlet.getValue().stream().map(TimelineEntry::feed).filter(feed -> !feed.isEmpty()).distinct().toList(),
+                        outlet.getValue().size(),
+                        seenAt(outlet.getValue().get(0))
+                ))
+                .toList();
+
+        return new EventCoverageResponse(
+                eventId,
+                timeline.size(),
+                outlets.size(),
+                timeline.isEmpty() ? null : seenAt(timeline.get(0)),
+                timeline.stream().map(NewsEventService::seenAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null),
+                outlets,
+                timeline
+        );
+    }
+
+    // Article sources are stored as "Outlet -> Section" (NewsSource.name).
+    static String outletOf(String source) {
+        if (source == null) {
+            return "Unknown";
+        }
+        int arrow = source.indexOf(SOURCE_SEPARATOR);
+        return arrow < 0 ? source.trim() : source.substring(0, arrow).trim();
+    }
+
+    static String feedOf(String source) {
+        if (source == null) {
+            return "";
+        }
+        int arrow = source.indexOf(SOURCE_SEPARATOR);
+        return arrow < 0 ? "" : source.substring(arrow + SOURCE_SEPARATOR.length()).trim();
+    }
+
+    // The outlet's publish time, or when X-NEWS collected the article if the
+    // feed gave none.
+    private static LocalDateTime seenAt(TimelineEntry entry) {
+        return entry.publishedAt() != null ? entry.publishedAt() : entry.observedAt();
     }
 
     @Transactional
