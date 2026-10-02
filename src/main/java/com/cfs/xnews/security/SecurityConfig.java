@@ -107,6 +107,13 @@ public class SecurityConfig {
                         ).authenticated()
 
 
+                        // Search articles
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/search"
+                        ).authenticated()
+
+
                         // Event analysis
                         .requestMatchers(
                                 HttpMethod.POST,

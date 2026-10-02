@@ -73,6 +73,22 @@ public class EventMatchingClient {
                 .body(EmbeddingResponse.class);
     }
 
+    // For interactive search: same /embed call, but on the 5 s client, so a
+    // slow AI service degrades search to full text instead of hanging it.
+    public EmbeddingResponse generateEmbeddingWithTimeout(
+            String text
+    ) {
+
+        return v2PredictClient
+                .post()
+                .uri("/embed")
+                .body(
+                        new EmbeddingRequest(text)
+                )
+                .retrieve()
+                .body(EmbeddingResponse.class);
+    }
+
     public EventMatchResponse predict(
             EventMatchRequest request
     ) {

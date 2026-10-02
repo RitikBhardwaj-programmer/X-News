@@ -9,6 +9,7 @@ import EventPage from "./pages/EventPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import SearchPage from "./pages/SearchPage";
 
 import { useAuth } from "./context/useAuth";
 
@@ -109,6 +110,15 @@ function App() {
                 element={
                     <RequireAuth>
                         <EventPage />
+                    </RequireAuth>
+                }
+            />
+
+            <Route
+                path="/search"
+                element={
+                    <RequireAuth>
+                        <SearchPage />
                     </RequireAuth>
                 }
             />
