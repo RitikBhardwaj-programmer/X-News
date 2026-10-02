@@ -142,6 +142,22 @@ export async function getEvent(id) {
 }
 
 
+export async function getEventMatches(id) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/events/${id}/matches`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function searchArticles(query) {
 
     const response =
