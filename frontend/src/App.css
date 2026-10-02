@@ -1115,6 +1115,37 @@ a:hover {
   cursor: help;
 }
 
+.entity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-bottom: 14px;
+}
+
+.entity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 5px 11px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+
+  background: var(--surface);
+
+  color: var(--text);
+
+  font-size: 13px;
+}
+
+.entity-count {
+  color: var(--text-muted);
+
+  font-size: 11px;
+}
+
 .match-note {
   margin: -6px 0 16px;
 

@@ -142,6 +142,22 @@ export async function getEvent(id) {
 }
 
 
+export async function getEventEntities(id) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}/events/${id}/entities`,
+            {
+                headers: {
+                    ...authHeaders()
+                }
+            }
+        );
+
+    return handleResponse(response);
+}
+
+
 export async function getEventMatches(id) {
 
     const response =

@@ -7,6 +7,7 @@ import {
     getEvent,
     getEventCoverage,
     getEventMatches,
+    getEventEntities,
     analyzeEvent
 } from "../services/api";
 
@@ -73,6 +74,24 @@ function EventPage() {
         (loadedMatches?.eventId === eventId ? loadedMatches.data : [])
             .map((match) => [match.articleId, match])
     );
+
+
+    const [loadedEntities, setLoadedEntities] =
+        useState(null);
+
+    // Entities are extra context too; older articles have none recorded.
+    useEffect(() => {
+
+        getEventEntities(eventId)
+            .then((data) => setLoadedEntities({ eventId, data }))
+            .catch((error) => console.error(error));
+
+    }, [eventId]);
+
+    const entities =
+        loadedEntities?.eventId === eventId
+            ? loadedEntities.data
+            : [];
 
 
     useEffect(() => {
@@ -459,6 +478,48 @@ function EventPage() {
                     )}
 
                 </section>
+
+
+                {/* ENTITIES */}
+
+                {entities.length > 0 && (
+
+                    <section className="content-section">
+
+                        <div className="section-heading">
+                            <div>
+                                <span className="section-eyebrow">
+                                    MENTIONED
+                                </span>
+
+                                <h2>
+                                    People, places and organisations
+                                </h2>
+                            </div>
+                        </div>
+
+                        <div className="entity-list">
+                            {entities.map((entity) => (
+                                <span
+                                    key={entity.entityId}
+                                    className="entity-chip"
+                                >
+                                    {entity.name}
+                                    <span className="entity-count">
+                                        {entity.articleCount}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+
+                        <p className="match-note">
+                            Found automatically in headlines and
+                            summaries; the number is how many
+                            articles mention it.
+                        </p>
+
+                    </section>
+                )}
 
 
                 {/* SOURCES */}

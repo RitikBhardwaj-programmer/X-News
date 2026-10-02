@@ -1,6 +1,8 @@
 package com.cfs.xnews.event;
 
 import com.cfs.xnews.event.dto.EmbeddingRequest;
+import com.cfs.xnews.event.dto.ArticleText;
+import com.cfs.xnews.event.dto.EntityExtractionResponse;
 import com.cfs.xnews.event.dto.EmbeddingResponse;
 import com.cfs.xnews.event.dto.EventMatchRequest;
 import com.cfs.xnews.event.dto.EventMatchResponse;
@@ -87,6 +89,20 @@ public class EventMatchingClient {
                 )
                 .retrieve()
                 .body(EmbeddingResponse.class);
+    }
+
+    // Entity mentions in one article (5 s client: entity extraction must
+    // never hold up processing).
+    public EntityExtractionResponse extractEntities(
+            ArticleText article
+    ) {
+
+        return v2PredictClient
+                .post()
+                .uri("/entities")
+                .body(article)
+                .retrieve()
+                .body(EntityExtractionResponse.class);
     }
 
     public EventMatchResponse predict(
