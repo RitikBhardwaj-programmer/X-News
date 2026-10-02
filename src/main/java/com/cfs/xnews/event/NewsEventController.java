@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -19,9 +18,11 @@ public class NewsEventController {
         this.newsEventService = newsEventService;
     }
 
+    // 404 for an unknown id, instead of 200 with a null body (which left the
+    // event page blank).
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<NewsEvent>> getEvent(@PathVariable Long id){
-        return ResponseEntity.ok(eventRepository.findById(id));
+    public ResponseEntity<NewsEvent> getEvent(@PathVariable Long id){
+        return ResponseEntity.of(eventRepository.findById(id));
     }
 
     @GetMapping("/{id}/coverage")

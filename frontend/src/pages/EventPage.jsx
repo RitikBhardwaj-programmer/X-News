@@ -32,6 +32,9 @@ function EventPage() {
     const [error, setError] =
         useState(null);
 
+    const [notFound, setNotFound] =
+        useState(false);
+
     const [loadedCoverage, setLoadedCoverage] =
         useState(null);
 
@@ -60,6 +63,7 @@ function EventPage() {
 
                 setLoading(true);
                 setError(null);
+                setNotFound(false);
 
                 const data =
                     await getEvent(eventId);
@@ -70,8 +74,12 @@ function EventPage() {
 
                 console.error(error);
 
+                setNotFound(error.status === 404);
+
                 setError(
-                    "Unable to load this event."
+                    error.status === 404
+                        ? "This event doesn't exist. It may have been removed, or the link is wrong."
+                        : "Unable to load this event."
                 );
 
             } finally {
@@ -160,7 +168,9 @@ function EventPage() {
 
                     <div className="error-card">
                         <h2>
-                            Something went wrong
+                            {notFound
+                                ? "Event not found"
+                                : "Something went wrong"}
                         </h2>
 
                         <p>
