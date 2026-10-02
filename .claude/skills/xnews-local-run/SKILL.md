@@ -13,9 +13,9 @@ Local runs must never reach production. Production DB is only under `XNEWS_PROD_
 
 ## 1. Java unit tests (always with the local DB inline)
 ```bash
-cd "/c/Users/DELL/IdeaProjects/X News" && DATABASE_URL=jdbc:postgresql://localhost:15432/xnews DATABASE_USERNAME=postgres DATABASE_PASSWORD=postgres ./mvnw -o -q test -Dtest='!XNewsApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false > "$TEMP/mvntest.log" 2>&1; echo exit=$?; grep -h "Tests run" target/surefire-reports/*.txt | grep -v XNewsApplication | awk -F'[ ,]+' '{s+=$3; f+=$5+$7} END {print "tests:", s, "failures+errors:", f}'
+cd "/c/Users/DELL/IdeaProjects/X News" && DATABASE_URL=jdbc:postgresql://localhost:15432/xnews DATABASE_USERNAME=postgres DATABASE_PASSWORD=postgres ./mvnw -o -q test -Dtest='!XNewsApplicationTests' -Dsurefire.failIfNoSpecifiedTests=false > "$TEMP/mvntest.log" 2>&1; echo exit=$?; python -c "import re,glob; r=[re.search(r'Tests run: (\d+), Failures: (\d+), Errors: (\d+)', open(p).read()) for p in glob.glob('target/surefire-reports/*.txt') if 'XNewsApplication' not in p]; r=[m for m in r if m]; print('tests:', sum(int(m[1]) for m in r), 'failures+errors:', sum(int(m[2]) + int(m[3]) for m in r))"
 ```
-`XNewsApplicationTests.contextLoads` is excluded: it starts the full app (DB, Kafka, keys). Drop `-o` if new dependencies must download.
+Totals are counted in Python because skill arguments replace `$` followed by a digit in this file. `XNewsApplicationTests.contextLoads` is excluded: it starts the full app (DB, Kafka, keys). Drop `-o` if new dependencies must download.
 
 ## 2. AI service (background)
 ```bash
