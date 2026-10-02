@@ -49,10 +49,6 @@ public class EventAnalysisService {
                 analysis.disagreementLevel()
         );
 
-        event.setMisinformationRisk(
-                analysis.misinformationRisk()
-        );
-
         /*
          * We don't have trusted fact-checking evidence yet.
          * Therefore the event remains UNVERIFIED.
