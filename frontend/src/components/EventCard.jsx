@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import {
     verificationInfo,
     formatRelativeTime,
+    eventTitle,
     AI_ESTIMATE_NOTE
 } from "../utils/eventLabels";
 
@@ -61,7 +62,16 @@ function EventCard({ event }) {
 
 
             <h2 className="event-card-title">
-                {event.title}
+                {eventTitle(event)}
+
+                {event.generatedTitle && (
+                    <span
+                        className="ai-title-badge"
+                        title={`First headline: ${event.title}`}
+                    >
+                        AI title
+                    </span>
+                )}
             </h2>
 
 

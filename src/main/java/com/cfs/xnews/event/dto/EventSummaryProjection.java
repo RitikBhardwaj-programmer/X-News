@@ -8,6 +8,8 @@ public interface EventSummaryProjection {
 
     String getTitle();
 
+    String getGeneratedTitle();
+
     String getDescription();
 
     String getSummary();

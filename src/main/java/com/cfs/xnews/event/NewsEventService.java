@@ -92,6 +92,7 @@ public class NewsEventService {
                 .map(event -> new EventSummaryResponse(
                         event.getId(),
                         event.getTitle(),
+                        event.getGeneratedTitle(),
                         event.getDescription(),
                         event.getSummary(),
                         event.getCreatedAt(),

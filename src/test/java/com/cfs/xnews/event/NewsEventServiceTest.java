@@ -103,6 +103,7 @@ class NewsEventServiceTest {
         EventSummaryProjection projection = mock(EventSummaryProjection.class);
         when(projection.getId()).thenReturn(7L);
         when(projection.getTitle()).thenReturn("title");
+        when(projection.getGeneratedTitle()).thenReturn("Generated title");
         when(projection.getSourceCount()).thenReturn(3L);
         when(projection.getVerificationStatus()).thenReturn("CONTESTED");
         when(projection.getDisagreementLevel()).thenReturn("HIGH");
@@ -114,6 +115,9 @@ class NewsEventServiceTest {
         assertThat(events).hasSize(1);
         EventSummaryResponse event = events.get(0);
         assertThat(event.id()).isEqualTo(7L);
+        // The first headline and the generated title are both returned.
+        assertThat(event.title()).isEqualTo("title");
+        assertThat(event.generatedTitle()).isEqualTo("Generated title");
         assertThat(event.sourceCount()).isEqualTo(3L);
         assertThat(event.verificationStatus()).isEqualTo("CONTESTED");
         assertThat(event.disagreementLevel()).isEqualTo("HIGH");

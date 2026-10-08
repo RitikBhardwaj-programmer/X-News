@@ -746,6 +746,46 @@ a:hover {
   color: var(--text);
 }
 
+/* Marks a title written by AI (the first headline stays visible). */
+.ai-title-badge {
+  display: inline-block;
+
+  margin-left: 8px;
+  padding: 1px 7px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.6;
+
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.event-original-title {
+  margin: 12px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.event-original-title .ai-title-badge {
+  margin: 0 8px 0 0;
+}
+
+.kicker-note {
+  font-weight: 400;
+  text-transform: none;
+  cursor: help;
+}
+
 .event-description {
   max-width: 850px;
 

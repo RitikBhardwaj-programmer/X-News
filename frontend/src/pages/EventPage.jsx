@@ -15,7 +15,9 @@ import {
 
 import {
     verificationInfo,
-    formatRelativeTime
+    formatRelativeTime,
+    eventTitle,
+    INDEPENDENCE_NOTE
 } from "../utils/eventLabels";
 
 import { claimText } from "../utils/claimLabels";
@@ -328,13 +330,34 @@ function EventPage() {
                                 {outletCount === 1
                                     ? "OUTLET"
                                     : "OUTLETS"}
+
+                                {outletCount > 1 && (
+                                    <>
+                                        {" "}
+                                        <span
+                                            className="kicker-note"
+                                            title={INDEPENDENCE_NOTE}
+                                        >
+                                            (independence not checked)
+                                        </span>
+                                    </>
+                                )}
                             </>
                         )}
                     </div>
 
                     <h1 className="event-title">
-                        {event.title}
+                        {eventTitle(event)}
                     </h1>
+
+                    {event.generatedTitle && (
+                        <p className="event-original-title">
+                            <span className="ai-title-badge">
+                                AI title
+                            </span>
+                            First headline: {event.title}
+                        </p>
+                    )}
 
                     {event.description && (
                         <p className="event-description">

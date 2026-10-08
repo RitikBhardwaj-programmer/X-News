@@ -1026,6 +1026,12 @@ AI_EVENT_MATCHER_MODE        v1 (default) | shadow | v2 - V4 stage 1b matcher:
                              decisions in event_match_decisions; v2 lets v2
                              decide (falls back to v1 if its call fails)
 JEV_API_KEY                  without it, categories use keyword rules
+EVENT_TITLES_ENABLED         default false - Gemini titles events once they
+                             reach 5 articles (AI-labelled; the first
+                             headline is kept)
+EVENT_TITLES_MAX_PER_RUN     default 5 (one run every 15 minutes)
+EVENT_TITLES_MAX_PER_DAY     default 12 - the free-tier key allows 20
+                             Gemini requests a day, shared with Analyze
 ```
 
 In production these are Azure Container Apps secrets. Never commit secrets
@@ -1562,7 +1568,8 @@ Future work includes:
 -   Stop events over-merging: new articles must also be similar to every
     existing event member (validated offline first)
 -   Event statistics in the UI (member count, activity, open/closed)
--   Gemini auto-titles for events with two or more articles
+-   Gemini auto-titles for events that reach five articles (cite-or-drop,
+    labelled "AI title", first headline kept; off until enabled)
 -   Persisted match confidence, shown as honest labels
 -   Count distinct outlets per event and detect near-identical wire copy
 -   Whole-word keyword category rules (the substring fallback mislabels

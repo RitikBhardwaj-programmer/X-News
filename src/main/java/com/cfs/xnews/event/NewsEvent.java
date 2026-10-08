@@ -130,6 +130,20 @@ public class NewsEvent {
     @JsonRawValue
     private String analysis;
 
+    // Gemini-written title (null until titled); title stays the first
+    // article's headline.
+    @Column(name = "generated_title", length = 200)
+    private String generatedTitle;
+
+    // Provenance of generatedTitle (extraction_runs.id).
+    @Column(name = "title_run_id")
+    private Long titleRunId;
+
+    // When titling was last attempted (UTC).
+    @JsonIgnore
+    @Column(name = "title_attempted_at")
+    private LocalDateTime titleAttemptedAt;
+
     public Long getId() {
         return id;
     }
@@ -188,6 +202,30 @@ public class NewsEvent {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getGeneratedTitle() {
+        return generatedTitle;
+    }
+
+    public void setGeneratedTitle(String generatedTitle) {
+        this.generatedTitle = generatedTitle;
+    }
+
+    public Long getTitleRunId() {
+        return titleRunId;
+    }
+
+    public void setTitleRunId(Long titleRunId) {
+        this.titleRunId = titleRunId;
+    }
+
+    public LocalDateTime getTitleAttemptedAt() {
+        return titleAttemptedAt;
+    }
+
+    public void setTitleAttemptedAt(LocalDateTime titleAttemptedAt) {
+        this.titleAttemptedAt = titleAttemptedAt;
     }
 
     public String getDescription() {
