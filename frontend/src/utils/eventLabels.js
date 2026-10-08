@@ -37,6 +37,15 @@ export const AI_ESTIMATE_NOTE =
     "AI estimate, not a fact-check";
 
 
+// The AI-written title when there is one; otherwise the first headline.
+export function eventTitle(event) {
+    return event.generatedTitle || event.title;
+}
+
+export const INDEPENDENCE_NOTE =
+    "Outlets are counted by name. Copies of the same agency story (PTI, ANI) count as separate outlets.";
+
+
 const RELATIVE_UNITS = [
     ["year", 60 * 60 * 24 * 365],
     ["month", 60 * 60 * 24 * 30],
